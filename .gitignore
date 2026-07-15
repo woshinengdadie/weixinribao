@@ -39,3 +39,4 @@ desktop.ini
 models/*.gguf
 installer_output/
 wx_key.zip
+wx_key/
