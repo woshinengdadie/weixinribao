@@ -38,3 +38,4 @@ desktop.ini
 # 大文件
 models/*.gguf
 installer_output/
+wx_key.zip
