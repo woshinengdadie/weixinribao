@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微信工作日报助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Microsoft YaHei',sans-serif;background:#f5f6f9}
+
+/* 整体容器: 撑满窗口 */
+.app{display:flex;flex-direction:column;height:100vh;width:100vw}
+
+/* 顶栏 */
+.titlebar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#fff;border-bottom:1px solid #e8e8e8;flex-shrink:0}
+.titlebar h1{font-size:15px;font-weight:600;color:#1a1a2e;letter-spacing:.5px}
+
+/* 工具栏 */
+.toolbar{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff;border-bottom:1px solid #e8e8e8;flex-shrink:0;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+
+/* 中部: 侧栏 + 主内容 */
+.main-area{display:flex;flex:1;min-height:0}
+
+/* 侧栏 */
+.sidebar{width:170px;background:#fafafa;border-right:1px solid #e8e8e8;padding:6px 0;flex-shrink:0;overflow-y:auto}
+.sidebar-item{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:#666;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.sidebar-item:hover{background:#eee;color:#333}
+.sidebar-item.active{background:#e3f0ff;color:#1976d2;font-weight:600;border-left-color:#1976d2}
+.sidebar-item .icon{font-size:15px;width:22px;text-align:center}
+
+/* 主面板 */
+.main{flex:1;background:#fff;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tab-panel{flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden}
+.tab-panel.active{display:flex}
+
+/* 滚动容器 */
+.scroll-area{flex:1;overflow-y:auto;padding:18px 22px;min-height:0}
+
+/* 仪表盘卡片 */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat-card{background:linear-gradient(135deg,#f8f9fb,#f0f2f6);border-radius:10px;padding:16px 18px;border:1px solid #e8e8e8}
+.stat-card .num{font-size:28px;font-weight:700;color:#1a1a2e;line-height:1.1}
+.stat-card .lbl{font-size:12px;color:#888;margin-top:3px}
+
+/* 操作栏 */
+.action-bar{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#f8f9fb;border-radius:10px;border:1px solid #e8e8e8;margin-bottom:18px;flex-wrap:wrap}
+.action-bar .sep{width:1px;height:24px;background:#ccc;margin:0 4px}
+
+/* 日志区 */
+.log-wrap{flex:1;display:flex;flex-direction:column;min-height:100px}
+.log-title{font-size:12px;color:#666;margin-bottom:8px;flex-shrink:0}
+.log-box{flex:1;background:#1e1e1e;border-radius:8px;padding:10px 14px;font-family:Consolas,'Courier New',monospace;font-size:11px;color:#d4d4d4;overflow-y:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;min-height:0}
+
+/* 表单 */
+.form-title{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #e8e8e8}
+.f-row{display:flex;align-items:center;margin-bottom:14px;gap:10px}
+.f-row label{width:85px;font-size:12px;color:#555;flex-shrink:0;text-align:right}
+.f-row input,.f-row select{flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none}
+.f-row input:focus,.f-row select:focus{border-color:#1976d2;box-shadow:0 0 0 2px rgba(25,118,210,.12)}
+.f-row textarea{flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;min-height:60px;resize:vertical;outline:none;font-family:inherit}
+
+/* 按钮 */
+.tbtn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:1px solid #d0d0d0;background:#fff;font-size:12px;color:#555;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tbtn:hover{background:#f0f0f0}
+.tbtn.blue{background:#1976d2;color:#fff;border-color:#1976d2}
+.tbtn.blue:hover{background:#1565c0}
+.tbtn.green{background:#4CAF50;color:#fff;border-color:#4CAF50}
+.tbtn.green:hover{background:#388E3C}
+.tbtn.red{color:#e74c3c;border-color:#e74c3c}
+.save-btn{display:block;width:100%;padding:9px;border:none;border-radius:7px;background:#1976d2;color:#fff;font-size:13px;cursor:pointer;transition:background .15s}
+.save-btn:hover{background:#1565c0}
+
+/* 提示卡片 */
+.hint-box{font-size:12px;color:#666;padding:10px 14px;background:#f8f9fb;border-radius:7px;border:1px solid #e8e8e8;line-height:1.6;margin-bottom:14px}
+.hint-box.key-ok{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+.hint-box.warn{background:#fffbe6;border-color:#ffe58f}
+
+/* 状态栏 */
+.status-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 16px;background:#fafafa;border-top:1px solid #e8e8e8;font-size:11px;color:#888;flex-shrink:0}
+.status-bar .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CAF50;margin-right:5px}
+
+/* 时间选择器样式 */
+.time-input{display:flex;align-items:center;gap:4px;font-size:12px;color:#555}
+.time-input input[type="date"],.time-input input[type="time"]{padding:4px 6px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;outline:none}
+.time-input input:focus{border-color:#1976d2}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#4CAF50;color:#fff;padding:10px 24px;border-radius:6px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.toast.err{background:#f44336}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 顶栏 -->
+  <div class="titlebar">
+    <h1>📋 微信工作日报助手</h1>
+    <span style="display:flex;gap:7px">
+      <span style="width:11px;height:11px;border-radius:50%;background:#4CAF50;display:inline-block" title="正常运行"></span>
+    </span>
+  </div>
+
+  <!-- 工具栏 -->
+  <div class="toolbar">
+    <button class="tbtn" onclick="openLatest('folder')">📂 打开文件夹</button>
+    <button class="tbtn" onclick="openLatest('summary')">📄 工作总结</button>
+    <button class="tbtn" onclick="openLatest('detail')">📋 对话详情</button>
+    <button class="tbtn" onclick="openLatest('todos')">📝 待办事项</button>
+    <button class="tbtn" onclick="openLatest('weekly-res')">📊 工作周报</button>
+    <span class="spacer"></span>
+    <button class="tbtn" onclick="openOutputRoot()">📁 历史文档</button>
+    <button class="tbtn red" onclick="quitApp()">🚪 退出</button>
+  </div>
+
+  <!-- 中部: 侧栏 + 主区域 -->
+  <div class="main-area">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-item active" onclick="switchTab(this,'panel-dash')"><span class="icon">🏠</span> 首页</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-basic')"><span class="icon">⚙️</span> 基本设置</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-schedule')"><span class="icon">⏰</span> 定时任务</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-weekly')"><span class="icon">📊</span> 周报</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-chat-analyze')"><span class="icon">🔍</span> 会话分析</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-chat-monitor');loadMonitorConfig()"><span class="icon">📡</span> 会话监控</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-rule')"><span class="icon">📝</span> 规则逻辑</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-block')"><span class="icon">🚫</span> 屏蔽列表</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-key')"><span class="icon">🔑</span> 密钥配置</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-activate');loadActivateStatus()"><span class="icon">🔐</span> 激活授权</div>
+    </div>
+
+    <div class="main">
+      <!-- ==================== 首页仪表盘 ==================== -->
+      <div id="panel-dash" class="tab-panel active">
+        <div class="scroll-area" style="display:flex;flex-direction:column">
+          <!-- 操作栏 -->
+          <div class="action-bar">
+            <button class="tbtn green" id="manualRunBtn" onclick="manualRun()">▶ 手动运行</button>
+            <div class="time-input">
+              <span>从</span>
+              <input type="date" id="manualDate">
+              <input type="time" id="manualTime" value="00:00">
+              <span style="color:#888">→ 现在</span>
+            </div>
+            <div class="sep"></div>
+            <button class="tbtn" id="autoBtn" onclick="toggleAuto()" style="min-width:110px">⏸ 自动运行</button>
+            <span id="autoStatus" style="font-size:12px;color:#888;white-space:nowrap"><span class="dot"></span>已停止</span>
+            <div class="sep"></div>
+            <button class="tbtn green" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
+            <div class="sep"></div>
+            <button class="tbtn" onclick="testKeys()">🔍 测试密钥</button>
+            <div class="sep"></div>
+            <button class="tbtn red" onclick="clearOldTodos()">🗑 清理旧待办</button>
+          </div>
+
+          <!-- 统计卡片 -->
+          <div class="stat-grid" style="flex-shrink:0">
+            <div class="stat-card"><div class="num" id="statWork">0</div><div class="lbl">参与会话数</div></div>
+            <div class="stat-card"><div class="num" id="statTodo">0</div><div class="lbl">待办事项</div></div>
+            <div class="stat-card"><div class="num" id="statRisk">0</div><div class="lbl">风险提醒</div></div>
+            <div class="stat-card"><div class="num" id="statWeekly">0</div><div class="lbl">本周周报</div></div>
+          </div>
+
+          <!-- 日志 -->
+          <div class="log-wrap">
+            <div class="log-title">📋 运行日志</div>
+            <div class="log-box" id="logBox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 基本设置 ==================== -->
+      <div id="panel-basic" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">基本设置</div>
+          <div class="f-row"><label>微信昵称</label><input type="text" id="cfgMyName" placeholder="你的微信昵称（必填）"></div>
+          <div class="f-row"><label>微信ID</label><input type="text" id="cfgWxid" placeholder="wxid_xxxx（可选，填数据库目录后可自动识别）"><button class="tbtn" onclick="detectWxid()">识别ID</button></div>
+          <div class="f-row"><label>API Key</label><input type="password" id="cfgApiKey" placeholder="输入 API Key"></div>
+          <div class="f-row"><label>Base URL</label><input type="text" id="cfgBaseUrl" placeholder="https://token-plan-cn.xiaomimimo.com/v1"></div>
+          <div class="f-row"><label>模型</label><input type="text" id="cfgModel" placeholder="mimo-v2.5-pro"></div>
+          <div class="f-row"><label>Temperature</label><input type="number" id="cfgTemperature" placeholder="0.5" step="0.1" min="0" max="2" style="max-width:120px"><label style="width:auto;font-size:11px;color:#888">0~2，越低越保守</label></div>
+          <div class="f-row"><label>Max Tokens</label><input type="number" id="cfgMaxTokens" placeholder="16000" step="1000" min="100" style="max-width:130px"></div>
+          <div class="f-row"><label>数据库目录</label><input type="text" id="cfgDbDir" placeholder="自动检测，一般无需填写"><button class="tbtn" onclick="browseDbDir()">浏览</button></div>
+          <div class="f-row"><label>输出位置</label><input type="text" id="cfgOutputDir" placeholder="./output"><button class="tbtn" onclick="browseOutputDir()">浏览</button></div>
+          <div class="f-row"><label>输出格式</label><select id="cfgOutputFormat"><option value="md">Markdown (.md)</option><option value="txt">纯文本 (.txt)</option></select><label style="width:auto;font-size:11px;color:#888;padding-top:5px">适用于日报、周报、会话分析。待办HTML不变。</label></div>
+          <div class="f-row"><label>AI 总结</label><label style="width:auto;font-size:13px;padding-top:7px"><input type="checkbox" id="cfgLlmSummary" checked> 开启 AI 智能总结（关闭后仅整理对话详情）</label></div>
+          <div class="f-row"><label>本地模型</label><label style="width:auto;font-size:13px;padding-top:7px"><input type="checkbox" id="cfgLocalLlm" onclick="toggleLocalModel()"> 使用本地小模型（无需 API Key，首次需下载~380MB）</label></div>
+          <div id="localModelInfo" style="display:none;margin:4px 0 4px 120px;font-size:12px;color:#666">
+            使用 Qwen2.5-0.5B 本地推理，约需 500MB 内存。
+            首次运行会自动下载模型，请保持网络通畅。
+          </div>
+          <button class="save-btn" onclick="saveBasic()">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- ==================== 密钥配置 ==================== -->
+      <div id="panel-key" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">手动密钥配置（微信 4.1+）</div>
+          <div class="hint-box">用 wx_key 工具提取 passphrase（十六进制字符串），粘贴后点击「配置密钥」。wxid 和数据库目录会自动检测。</div>
+          <div id="keyInputArea">
+            <div class="f-row"><label>Passphrase</label><input type="text" id="cfgPassphrase" placeholder="wx_key 获取的十六进制密钥"></div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;margin-left:95px">
+              <button class="tbtn green" onclick="manualKeyConfig()">🔑 配置密钥</button>
+              <span id="keyConfigStatus" style="font-size:12px;color:#888;padding-top:6px"></span>
+            </div>
+          </div>
+          <div id="keyOkArea" style="display:none">
+            <div class="hint-box key-ok">✅ 密钥已配置（<span id="keyOkCount">0</span> 个数据库通过验证）</div>
+            <button class="tbtn" onclick="showKeyReconfig()" style="margin-left:95px">🔄 重新配置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 定时任务 ==================== -->
+      <div id="panel-schedule" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">定时任务设置</div>
+          <div class="f-row"><label>运行模式</label><select id="cfgScheduleMode"><option value="scheduled">每天定时运行</option><option value="interval">间隔轮询运行</option></select></div>
+          <div class="f-row"><label>运行时间</label><input type="time" id="cfgScheduleTime" value="17:30"><label style="width:auto;font-size:12px"><input type="checkbox" id="cfgDailyOnce" checked> 每天只运行一次</label></div>
+          <div class="f-row"><label>间隔（秒）</label><input type="number" id="cfgInterval" value="1800" disabled style="max-width:120px"></div>
+          <button class="save-btn" onclick="saveBasic()">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- ==================== 周报 ==================== -->
+      <div id="panel-weekly" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">周报生成</div>
+          <div class="hint-box">周报会自动汇总本周周一至周五的每日工作总结，由 AI 整合提炼。默认范围：本周一 → 本周五。</div>
+          <div class="f-row">
+            <label>选择周次</label>
+            <select id="weekSelect"><option value="">本周</option><option value="7daysago">上周</option><option value="14daysago">前一周</option></select>
+            <button class="tbtn green" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
+          </div>
+          <div class="f-row">
+            <label>自动生成</label>
+            <label style="width:auto;font-size:12px;padding-top:7px"><input type="checkbox" id="cfgWeeklyAuto"> 每周五定时任务完成后自动生成周报</label>
+          </div>
+          <button class="save-btn" onclick="saveBasic()">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- ==================== 会话分析 ==================== -->
+      <div id="panel-chat-analyze" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">重点会话分析 <span style="font-size:11px;color:#888;font-weight:400">— 独立于日报，全方面深度分析指定会话</span></div>
+          <div class="hint-box">左侧搜索勾选会话 → 自动加入右侧已选清单 → 右侧可删减 → 点击「开始分析」</div>
+          <div class="hint-box warn">⚠️ 本功能独立于日报，不应用屏蔽列表和参与度过滤，选定会话的全部消息都会被分析。</div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <!-- 左: 搜索 + 列表 -->
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                <span style="font-size:12px;color:#555;font-weight:500;white-space:nowrap">会话列表</span>
+                <button class="tbtn" onclick="loadChatList()" style="font-size:11px;padding:3px 10px;white-space:nowrap">📋 加载</button>
+              </div>
+              <input type="text" id="chatSearch" placeholder="搜索会话..." style="width:100%;padding:5px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none;margin-bottom:6px" oninput="filterChatList()">
+              <div style="border:1px solid #d0d0d0;border-radius:6px;max-height:260px;overflow-y:auto;padding:4px 0" id="chatSelectList">
+                <div style="padding:10px 14px;font-size:12px;color:#888">点击「加载」按钮获取会话列表</div>
+              </div>
+            </div>
+            <!-- 右: 已选 + 操作 -->
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;color:#555;margin-bottom:6px;font-weight:500">已选择 (<span id="chatSelectCount">0</span>)</div>
+              <div id="chatSelectedBox" style="border:1px solid #d0d0d0;border-radius:6px;max-height:200px;overflow-y:auto;padding:6px 0;min-height:40px;background:#fafafa">
+                <div style="padding:10px 14px;font-size:12px;color:#888" id="chatSelectedEmpty">暂无选择，请在左侧勾选</div>
+              </div>
+              <div class="time-input" style="margin-top:12px;margin-bottom:4px">
+                <span>从</span>
+                <input type="date" id="chatAnalyzeDate" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
+                <input type="time" id="chatAnalyzeTime" value="00:00" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
+                <span style="color:#888">→ 现在</span>
+              </div>
+              <div style="margin-top:10px">
+                <textarea id="chatAnalyzeRequirement" placeholder="分析要求，如：重点分析项目风险、人员动态...留空则全面分析"
+                  style="width:100%;height:60px;padding:6px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+              </div>
+              <button class="save-btn" id="chatAnalyzeBtn" onclick="startChatAnalyze()" style="margin-top:8px">🔍 开始分析</button>
+              <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
+                <span id="chatAnalyzeStatus" style="font-size:11px;color:#888"></span>
+                <button class="tbtn" id="chatAnalyzeOpenBtn" onclick="openChatAnalyzeReport()" style="display:none;font-size:11px;padding:3px 10px">📄 打开最新报告</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 会话监控 ==================== -->
+      <div id="panel-chat-monitor" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">会话监控 <span style="font-size:11px;color:#888;font-weight:400">— 定时捞取群聊消息，生成 .md 文件，可手动发送给 AI 分析</span></div>
+
+          <div style="margin-bottom:16px">
+            <div class="f-row">
+              <label>启用监控</label>
+              <label style="width:auto;font-size:13px;padding-top:7px">
+                <input type="checkbox" id="monEnabled"> 开启定时监控（保存后生效）
+              </label>
+            </div>
+            <div class="hint-box">左侧搜索勾选群聊 → 自动加入右侧已选清单 → 右侧可删减 → 点击「保存」</div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                  <span style="font-size:12px;color:#555;font-weight:500;white-space:nowrap">群聊列表</span>
+                  <button class="tbtn" onclick="loadMonitorChatList()" style="font-size:11px;padding:3px 10px;white-space:nowrap">📋 加载</button>
+                </div>
+                <input type="text" id="monChatSearch" placeholder="搜索群聊..." style="width:100%;padding:5px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none;margin-bottom:6px" oninput="filterMonitorChatList()">
+                <div style="border:1px solid #d0d0d0;border-radius:6px;max-height:200px;overflow-y:auto;padding:4px 0" id="monChatSelectList">
+                  <div style="padding:10px 14px;font-size:12px;color:#888">点击「加载」按钮获取群聊列表</div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;color:#555;margin-bottom:6px;font-weight:500">已选监控群聊 (<span id="monChatSelectCount">0</span>)</div>
+                <div id="monChatSelectedBox" style="border:1px solid #d0d0d0;border-radius:6px;max-height:200px;overflow-y:auto;padding:6px 0;min-height:40px;background:#fafafa">
+                  <div style="padding:10px 14px;font-size:12px;color:#888" id="monChatSelectedEmpty">暂无选择，请在左侧勾选</div>
+                </div>
+              </div>
+            </div>
+            <div class="f-row">
+              <label>调度模式</label>
+              <select id="monScheduleMode" style="max-width:120px" onchange="updateMonScheduleUI()">
+                <option value="interval">间隔模式</option>
+                <option value="scheduled">定时模式</option>
+              </select>
+              <input type="number" id="monInterval" placeholder="3600" style="max-width:100px;margin-left:8px" onchange="updateMonScheduleUI()">
+              <label style="width:auto;font-size:11px;color:#888;padding-top:7px" id="monIntervalLabel">秒</label>
+              <input type="text" id="monScheduledTime" placeholder="17:30" style="max-width:80px;margin-left:8px;display:none">
+            </div>
+            <div class="f-row">
+              <label>首次范围</label>
+              <input type="number" id="monFirstHours" placeholder="24" style="max-width:80px">
+              <label style="width:auto;font-size:11px;color:#888;padding-top:7px">小时（首次运行默认捞最近N小时）</label>
+            </div>
+            <div style="display:flex;gap:8px;margin:12px 0 0 120px">
+              <button class="save-btn" style="padding:6px 16px" onclick="saveMonitorConfig()">💾 保存</button>
+              <button class="tbtn" id="monToggleBtn" onclick="toggleMonitor()">▶ 启动监控</button>
+              <button class="tbtn" onclick="runMonitorNow()">⚡ 立即运行</button>
+            </div>
+            <div id="monStatus" style="margin:8px 0 0 120px;font-size:12px;color:#888">状态：未运行</div>
+          </div>
+
+          <div style="border-top:1px solid #e0e0e0;padding-top:12px">
+            <div class="form-title" style="font-size:14px">消息文件 & AI 分析</div>
+            <div class="hint-box">点击「选择文件」在资源管理器中多选 .md 文件 → 填写分析要求 → 点击「发送分析」</div>
+            <div style="display:flex;gap:8px;align-items:center;margin:8px 0">
+              <button class="tbtn" onclick="pickMonitorFiles()">📂 选择文件</button>
+              <span id="monFileCount" style="font-size:12px;color:#888">未选择文件</span>
+              <input type="text" id="monRequirement" placeholder="分析要求（如：总结测试问题进展和责任人）" style="flex:1;border:1px solid #d0d0d0;border-radius:7px;padding:6px 10px;font-size:12px;outline:none">
+              <button class="save-btn" style="padding:6px 16px" onclick="analyzeMonitorFiles()">🔍 发送分析</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 规则逻辑 ==================== -->
+      <div id="panel-rule" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">AI 规则逻辑 <span style="font-size:11px;color:#888;font-weight:400">— 保存后下次运行生效</span></div>
+          <div class="hint-box">用自然语言描述你希望 AI 如何分析你的聊天记录。例如：关注哪类话题、用什么格式输出等。</div>
+          <textarea class="f-row" id="cfgRulePrompt" spellcheck="false" style="width:100%;min-height:200px;font-family:Consolas,monospace;border:1px solid #d0d0d0;border-radius:7px;padding:10px;resize:vertical;outline:none;font-size:12px;line-height:1.7"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+            <button class="tbtn" onclick="resetRules()">↩ 恢复默认</button>
+            <button class="tbtn green" onclick="saveRules()">💾 保存规则</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 屏蔽列表 ==================== -->
+      <div id="panel-block" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">屏蔽列表 / 重要联系人</div>
+          <div class="hint-box">屏蔽列表：精确匹配会话名称，被屏蔽的会话不参与日报分析。<br>重要联系人：按发送者名字匹配，这些人在群里发言时即使没有@你也会被保留分析，避免漏掉关键人物的工作指示。</div>
+          <div class="f-row" style="align-items:flex-start"><label style="margin-top:5px">屏蔽列表</label><textarea id="cfgExclude" placeholder="每行一个会话名称（精确匹配）" style="min-height:120px"></textarea></div>
+          <div class="f-row" style="align-items:flex-start"><label style="margin-top:5px">重要联系人</label><textarea id="cfgImportantContacts" placeholder="每行一个昵称（如老板、项目经理）" style="min-height:120px"></textarea></div>
+          <button class="save-btn" onclick="saveBasic()">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- ==================== 激活授权 ==================== -->
+      <div id="panel-activate" class="tab-panel">
+        <div class="scroll-area">
+          <div class="form-title">软件激活</div>
+          <div class="hint-box" id="activateHint">正在检查激活状态...</div>
+          <div id="activateActivated" style="display:none">
+            <div style="font-size:24px;text-align:center;padding:30px 0">✅ 已激活</div>
+            <div style="max-width:360px;margin:0 auto;padding:20px;background:#f8f9fa;border-radius:8px">
+              <div class="f-row" style="margin-bottom:10px"><label style="width:80px">授权状态</label><span style="color:#27ae60;font-weight:500">正常</span></div>
+              <div class="f-row" style="margin-bottom:10px"><label style="width:80px">剩余时间</label><span id="activateDaysLeft" style="font-weight:500"></span></div>
+              <div class="f-row" style="margin-bottom:10px"><label style="width:80px">到期日期</label><span id="activateExpireDate"></span></div>
+              <div class="f-row" style="margin-bottom:10px"><label style="width:80px">License ID</label><span id="activateLicenseId" style="font-family:monospace;font-size:12px"></span></div>
+              <div class="f-row" style="margin-bottom:0"><label style="width:80px">机器码</label><span id="activateHwId" style="font-family:monospace;font-size:10px;word-break:break-all"></span></div>
+            </div>
+          </div>
+          <div id="activateForm" style="display:none">
+            <div class="hint-box" style="margin-bottom:16px">程序未激活，请在启动时输入激活码完成激活</div>
+            <div style="text-align:center;color:#888;font-size:13px;margin-bottom:12px">如需续期或更换机器，请联系管理员</div>
+            <div style="max-width:360px;margin:0 auto;padding:12px;background:#f8f9fa;border-radius:8px;text-align:center">
+              <span style="font-size:11px;color:#666">机器码：</span>
+              <span id="activateHwId2" style="font-family:monospace;font-size:10px;word-break:break-all;color:#333"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span><span class="dot"></span><span id="statusText">就绪</span></span>
+    <span>上次运行: <span id="lastRunTime">--</span> ｜ 下次运行: <span id="nextRunTime">--</span></span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====================== 禁用开发者工具 ======================
+(function(){
+  // 禁用快捷键: F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) || (e.ctrlKey && e.key === 'u')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
+
+  // 禁用右键菜单
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+
+  // 检测开发者工具打开（基于窗口尺寸差异）
+  var devtoolsOpen = false;
+  var threshold = 160;
+  var checkInterval = setInterval(function() {
+    var widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    var heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (!(heightThreshold && widthThreshold) &&
+      ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) || widthThreshold || heightThreshold)) {
+      if (!devtoolsOpen) {
+        devtoolsOpen = true;
+        // 开发者工具被打开时，可以在此添加额外处理
+      }
+    } else {
+      devtoolsOpen = false;
+    }
+  }, 500);
+
+  // 禁止控制台输出
+  try { console.log = console.warn = console.error = console.info = function(){}; } catch(e){}
+})();
+
+// ====================== State ======================
+let autoRunning = false;
+
+// ====================== Tab switching ======================
+function switchTab(el, panelId) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ====================== Init ======================
+document.getElementById('manualDate').valueAsDate = new Date();
+document.getElementById('chatAnalyzeDate').valueAsDate = new Date();
+loadConfig();
+startSSE();
+
+// ====================== API ======================
+async function api(url, method='GET', data=null) {
+  try {
+    const opts = {method, headers:{'Content-Type':'application/json'}};
+    if (data) opts.body = JSON.stringify(data);
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+      console.warn('API ' + url + ' returned ' + res.status);
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.warn('API ' + url + ' failed: ' + e.message);
+    return null;
+  }
+}
+
+// ====================== Config ======================
+async function loadConfig() {
+  const cfg = await api('/api/config');
+  if (!cfg) return;
+  document.getElementById('cfgMyName').value = cfg.my_name || '';
+  document.getElementById('cfgWxid').value = cfg.wxid || '';
+  document.getElementById('cfgApiKey').value = cfg.api_key || '';
+  document.getElementById('cfgBaseUrl').value = cfg.base_url || 'https://token-plan-cn.xiaomimimo.com/v1';
+  document.getElementById('cfgModel').value = cfg.model || 'mimo-v2.5-pro';
+  document.getElementById('cfgTemperature').value = cfg.temperature !== undefined ? cfg.temperature : 0.5;
+  document.getElementById('cfgMaxTokens').value = cfg.max_tokens || 16000;
+  document.getElementById('cfgDbDir').value = cfg.db_dir || '';
+  document.getElementById('cfgScheduleMode').value = cfg.schedule_mode || 'scheduled';
+  document.getElementById('cfgScheduleTime').value = cfg.schedule_time || '17:30';
+  document.getElementById('cfgDailyOnce').checked = cfg.schedule_daily_once !== false;
+  document.getElementById('cfgInterval').value = cfg.schedule_interval || 1800;
+  document.getElementById('cfgInterval').disabled = cfg.schedule_mode !== 'interval';
+  document.getElementById('cfgWeeklyAuto').checked = cfg.weekly_auto || false;
+  document.getElementById('cfgRulePrompt').value = cfg.rule_prompt || '';
+  document.getElementById('cfgExclude').value = (cfg.exclude_chats || []).join('\n');
+  document.getElementById('cfgImportantContacts').value = (cfg.important_contacts || []).join('\n');
+  document.getElementById('cfgOutputDir').value = cfg.output_dir || './output';
+  document.getElementById('cfgOutputFormat').value = cfg.output_format || 'md';
+  document.getElementById('cfgLlmSummary').checked = cfg.llm_summary_enabled !== false;
+  document.getElementById('cfgLocalLlm').checked = cfg.use_local_llm === true;
+  updateLocalModelUI(cfg.use_local_llm);
+  updateKeyConfigUI(cfg.keys_configured, cfg.keys_count);
+  updateModeUI();
+}
+
+function updateKeyConfigUI(configured, count) {
+  var inputArea = document.getElementById('keyInputArea');
+  var okArea = document.getElementById('keyOkArea');
+  if (configured && count > 0) {
+    inputArea.style.display = 'none';
+    okArea.style.display = 'block';
+    document.getElementById('keyOkCount').textContent = count;
+  } else {
+    inputArea.style.display = 'block';
+    okArea.style.display = 'none';
+  }
+}
+
+function showKeyReconfig() {
+  document.getElementById('keyInputArea').style.display = 'block';
+  document.getElementById('keyOkArea').style.display = 'none';
+  document.getElementById('cfgPassphrase').value = '';
+}
+
+document.getElementById('cfgScheduleMode').onchange = function(){
+  document.getElementById('cfgInterval').disabled = this.value !== 'interval';
+};
+
+async function saveBasic() {
+  const data = {
+    my_name: document.getElementById('cfgMyName').value,
+    wxid: document.getElementById('cfgWxid').value,
+    api_key: document.getElementById('cfgApiKey').value,
+    base_url: document.getElementById('cfgBaseUrl').value,
+    model: document.getElementById('cfgModel').value,
+    temperature: parseFloat(document.getElementById('cfgTemperature').value) || 0.5,
+    max_tokens: parseInt(document.getElementById('cfgMaxTokens').value) || 16000,
+    db_dir: document.getElementById('cfgDbDir').value,
+    output_dir: document.getElementById('cfgOutputDir').value || './output',
+    output_format: document.getElementById('cfgOutputFormat').value || 'md',
+    exclude_chats: (document.getElementById('cfgExclude').value || '').split('\n').filter(l=>l.trim()),
+    important_contacts: (document.getElementById('cfgImportantContacts').value || '').split('\n').filter(l=>l.trim()),
+    schedule_mode: document.getElementById('cfgScheduleMode').value,
+    schedule_time: document.getElementById('cfgScheduleTime').value,
+    schedule_daily_once: document.getElementById('cfgDailyOnce').checked,
+    schedule_interval: parseInt(document.getElementById('cfgInterval').value) || 1800,
+    weekly_auto: document.getElementById('cfgWeeklyAuto').checked,
+    rule_prompt: document.getElementById('cfgRulePrompt').value,
+    llm_summary_enabled: document.getElementById('cfgLlmSummary').checked,
+    use_local_llm: document.getElementById('cfgLocalLlm').checked,
+    local_model_name: 'qwen2.5-0.5b',
+  };
+  await api('/api/config', 'POST', data);
+  toast('设置已保存');
+}
+
+function resetRules() {
+  document.getElementById('cfgRulePrompt').value =
+`请分析我今天的微信聊天记录，帮我完成以下内容：
+
+## 第一件事：每条对话的工作总结
+对我参与的每条对话逐一生成一条工作总结：
+- 简明扼要地概括核心工作内容（1句话）
+- 说明我在其中的角色或做了什么
+
+## 第二件事：提取待办事项
+仔细阅读我说的每一句话，结合上下文判断：
+1. 我答应了要做的事
+2. 别人明确让我做的事
+3. 我承诺跟进的事
+
+## 第三件事：风险识别
+识别可能存在的风险点，列出 0-3 条最值得关注的风险
+
+## 第四件事：工作感悟
+写 1-2 句话的工作感悟或反思`;
+}
+
+async function saveRules() {
+  const rule = document.getElementById('cfgRulePrompt').value;
+  const res = await api('/api/config/rule', 'POST', {rule_prompt: rule});
+  toast(res && res.success ? '规则已保存，下次运行生效' : '保存失败', res && res.success ? '' : 'err');
+}
+
+// ====================== Manual Key Config ======================
+async function manualKeyConfig() {
+  const passphrase = document.getElementById('cfgPassphrase').value.trim();
+  if (!passphrase) { toast('请填写 passphrase', 'err'); return; }
+  document.getElementById('keyConfigStatus').textContent = '正在派生密钥...';
+  const res = await api('/api/init/manual-key', 'POST', {
+    passphrase, db_dir: document.getElementById('cfgDbDir').value.trim() || '',
+    wxid: document.getElementById('cfgWxid').value.trim() || '',
+  });
+  if (res && res.success) {
+    document.getElementById('keyConfigStatus').textContent = '密钥配置成功！';
+    toast('密钥配置成功！现在可以手动运行了');
+    loadConfig();
+  } else {
+    document.getElementById('keyConfigStatus').textContent = '失败';
+    toast((res && res.message) || '配置失败', 'err');
+  }
+}
+
+// ====================== Run ======================
+var manualRunning = false;
+async function manualRun() {
+  if (manualRunning) {
+    // 停止
+    var stopRes = await api('/api/run/manual/stop', 'POST');
+    if (stopRes && stopRes.success) toast('正在停止...');
+    return;
+  }
+  const dateEl = document.getElementById('manualDate');
+  const timeEl = document.getElementById('manualTime');
+  const d = new Date(dateEl.value + 'T' + timeEl.value);
+  if (d > new Date()) { toast('不能设置未来时间', 'err'); return; }
+  const dateFrom = dateEl.value + ' ' + timeEl.value;
+  const res = await api('/api/run/manual', 'POST', {date_from: dateFrom});
+  if (res && res.success) toast('开始手动运行...');
+  else toast((res && res.message) || '启动失败', 'err');
+}
+
+function updateManualBtn(running) {
+  manualRunning = running;
+  var btn = document.getElementById('manualRunBtn');
+  if (running) {
+    btn.textContent = '⏹ 停止运行';
+    btn.className = 'tbtn red';
+  } else {
+    btn.textContent = '▶ 手动运行';
+    btn.className = 'tbtn green';
+  }
+}
+
+async function toggleAuto() {
+  if (autoRunning) {
+    var res = await api('/api/run/auto/stop', 'POST');
+    if (res && res.success) {
+      autoRunning = false;
+      updateAutoUI();
+      toast('已停止');
+    } else {
+      toast('停止失败', 'err');
+    }
+  } else {
+    await startAuto();
+  }
+}
+
+async function startAuto() {
+  const res = await api('/api/run/auto/start', 'POST');
+  if (res && res.success) { autoRunning = true; updateAutoUI(); toast('自动运行已启动'); }
+  else toast((res && res.message) || '启动失败', 'err');
+}
+
+function updateAutoUI() {
+  const btn = document.getElementById('autoBtn');
+  const status = document.getElementById('autoStatus');
+  if (autoRunning) {
+    btn.textContent = '⏹ 停止运行'; btn.style.borderColor = '#f44336'; btn.style.color = '#f44336';
+    status.innerHTML = '<span class="dot" style="background:#4CAF50"></span>运行中';
+  } else {
+    btn.textContent = '⏸ 自动运行'; btn.style.borderColor = '#d0d0d0'; btn.style.color = '#555';
+    status.innerHTML = '<span class="dot"></span>已停止';
+  }
+}
+
+function updateModeUI() {
+  document.getElementById('cfgInterval').disabled = document.getElementById('cfgScheduleMode').value !== 'interval';
+}
+
+function toggleLocalModel() {
+  updateLocalModelUI(document.getElementById('cfgLocalLlm').checked);
+}
+
+function updateLocalModelUI(enabled) {
+  var info = document.getElementById('localModelInfo');
+  var apiKeyRow = document.getElementById('cfgApiKey').closest('.f-row');
+  var baseUrlRow = document.getElementById('cfgBaseUrl').closest('.f-row');
+  var modelRow = document.getElementById('cfgModel').closest('.f-row');
+  if (enabled) {
+    info.style.display = 'block';
+    if (apiKeyRow) apiKeyRow.style.display = 'none';
+    if (baseUrlRow) baseUrlRow.style.display = 'none';
+    if (modelRow) modelRow.style.display = 'none';
+  } else {
+    info.style.display = 'none';
+    if (apiKeyRow) apiKeyRow.style.display = '';
+    if (baseUrlRow) baseUrlRow.style.display = '';
+    if (modelRow) modelRow.style.display = '';
+  }
+}
+
+// ====================== 会话监控 ======================
+
+var monAllChats = [];
+var monSelectedChats = [];
+
+async function loadMonitorChatList() {
+  var list = document.getElementById('monChatSelectList');
+  list.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#888">正在加载...</div>';
+  var res = await api('/api/sessions/list');
+  if (!res || !res.success) {
+    list.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#e74c3c">加载失败: ' + ((res && res.message) || '未知错误') + '</div>';
+    return;
+  }
+  monAllChats = res.sessions || [];
+  renderMonitorChatList(monAllChats);
+}
+
+function renderMonitorChatList(sessions) {
+  var list = document.getElementById('monChatSelectList');
+  var html = '';
+  for (var i = 0; i < sessions.length; i++) {
+    var s = sessions[i];
+    var tag = s.is_group ? ' [群]' : ' [私]';
+    var checked = monSelectedChats.indexOf(s.name) >= 0 ? ' checked' : '';
+    html += '<label style="display:flex;align-items:center;padding:6px 14px;font-size:12px;color:#333;cursor:pointer;gap:6px">' +
+      '<input type="checkbox" value="' + escapeHtml(s.name) + '"' + checked + ' onchange="onMonitorChatToggle(this)">' +
+      escapeHtml(s.name) + '<span style="color:#888;font-size:11px">' + tag + '</span></label>';
+  }
+  list.innerHTML = html;
+}
+
+function onMonitorChatToggle(cb) {
+  var name = cb.value;
+  if (cb.checked) {
+    if (monSelectedChats.indexOf(name) < 0) monSelectedChats.push(name);
+  } else {
+    monSelectedChats = monSelectedChats.filter(function(n) { return n !== name; });
+  }
+  refreshMonitorSelectedBox();
+}
+
+function removeMonitorChat(name) {
+  monSelectedChats = monSelectedChats.filter(function(n) { return n !== name; });
+  refreshMonitorSelectedBox();
+  filterMonitorChatList();
+}
+
+function refreshMonitorSelectedBox() {
+  var box = document.getElementById('monChatSelectedBox');
+  var empty = document.getElementById('monChatSelectedEmpty');
+  document.getElementById('monChatSelectCount').textContent = monSelectedChats.length;
+
+  if (monSelectedChats.length === 0) {
+    if (empty) empty.style.display = 'block';
+    var items = box.querySelectorAll('.selected-mon-chat-item');
+    for (var i = 0; i < items.length; i++) items[i].remove();
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  box.innerHTML = '';
+  for (var i = 0; i < monSelectedChats.length; i++) {
+    var name = monSelectedChats[i];
+    var div = document.createElement('div');
+    div.className = 'selected-mon-chat-item';
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12px;color:#333;border-bottom:1px solid #eee';
+    div.innerHTML = '<span>' + escapeHtml(name) + '</span>' +
+      '<span onclick="removeMonitorChat(\'' + escapeHtml(name).replace(/'/g, '&#39;') + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">\u2715</span>';
+    box.appendChild(div);
+  }
+}
+
+function filterMonitorChatList() {
+  var q = document.getElementById('monChatSearch').value.toLowerCase();
+  var filtered = q ? monAllChats.filter(function(s) { return s.name.toLowerCase().indexOf(q) >= 0; }) : monAllChats;
+  renderMonitorChatList(filtered);
+}
+
+async function loadMonitorConfig() {
+  const cfg = await api('/api/chat-monitor/config');
+  if (!cfg) return;
+  document.getElementById('monEnabled').checked = cfg.enabled || false;
+  monSelectedChats = (cfg.chats || []).slice();
+  refreshMonitorSelectedBox();
+  document.getElementById('monScheduleMode').value = cfg.schedule_mode || 'interval';
+  document.getElementById('monInterval').value = cfg.interval_seconds || 3600;
+  document.getElementById('monScheduledTime').value = cfg.scheduled_time || '17:30';
+  document.getElementById('monFirstHours').value = cfg.first_run_hours || 24;
+  updateMonScheduleUI();
+  loadMonitorStatus();
+  loadMonitorChatList();
+}
+
+function updateMonScheduleUI() {
+  var mode = document.getElementById('monScheduleMode').value;
+  var intervalInput = document.getElementById('monInterval');
+  var intervalLabel = document.getElementById('monIntervalLabel');
+  var timeInput = document.getElementById('monScheduledTime');
+  if (mode === 'interval') {
+    intervalInput.style.display = '';
+    intervalLabel.style.display = '';
+    timeInput.style.display = 'none';
+  } else {
+    intervalInput.style.display = 'none';
+    intervalLabel.style.display = 'none';
+    timeInput.style.display = '';
+  }
+}
+
+async function saveMonitorConfig() {
+  var chats = monSelectedChats.slice();
+  var data = {
+    enabled: document.getElementById('monEnabled').checked,
+    chats: chats,
+    schedule_mode: document.getElementById('monScheduleMode').value,
+    interval_seconds: parseInt(document.getElementById('monInterval').value) || 3600,
+    scheduled_time: document.getElementById('monScheduledTime').value || '17:30',
+    first_run_hours: parseInt(document.getElementById('monFirstHours').value) || 24,
+  };
+  var res = await api('/api/chat-monitor/config', 'POST', data);
+  if (res && res.success) toast('监控配置已保存');
+  else toast((res && res.message) || '保存失败', 'err');
+}
+
+var monRunning = false;
+
+async function toggleMonitor() {
+  if (monRunning) {
+    var res = await api('/api/chat-monitor/stop', 'POST');
+    if (res && res.success) toast('监控已停止');
+    else toast((res && res.message) || '停止失败', 'err');
+  } else {
+    var res = await api('/api/chat-monitor/start', 'POST');
+    if (res && res.success) toast('监控已启动');
+    else toast((res && res.message) || '启动失败', 'err');
+  }
+  loadMonitorStatus();
+}
+
+async function runMonitorNow() {
+  var res = await api('/api/chat-monitor/run-now', 'POST');
+  if (res && res.success) toast('已开始运行');
+  else toast((res && res.message) || '运行失败', 'err');
+}
+
+async function loadMonitorStatus() {
+  var res = await api('/api/chat-monitor/status');
+  if (!res) return;
+  var el = document.getElementById('monStatus');
+  var parts = [];
+  parts.push(res.scheduler_running ? '● 调度运行中' : '○ 调度未运行');
+  if (res.task_running) parts.push('⏳ 正在捞取消息');
+  if (res.last_run) parts.push('上次: ' + res.last_run);
+  if (res.next_run) parts.push('下次: ' + res.next_run);
+  el.textContent = parts.join('  |  ');
+  monRunning = res.scheduler_running;
+  var btn = document.getElementById('monToggleBtn');
+  if (monRunning) {
+    btn.textContent = '⏹ 停止监控';
+  } else {
+    btn.textContent = '▶ 启动监控';
+  }
+  setTimeout(loadMonitorStatus, 5000);
+}
+
+var monSelectedFiles = [];
+
+async function pickMonitorFiles() {
+  var res = await api('/api/file/pick-files', 'POST');
+  if (!res || !res.success) return;
+  if (!res.files || res.files.length === 0) {
+    monSelectedFiles = [];
+    document.getElementById('monFileCount').textContent = '未选择文件';
+    return;
+  }
+  monSelectedFiles = res.files;
+  document.getElementById('monFileCount').textContent = '已选 ' + res.files.length + ' 个文件';
+}
+
+async function analyzeMonitorFiles() {
+  if (monSelectedFiles.length === 0) { toast('请先选择消息文件', 'err'); return; }
+  var requirement = document.getElementById('monRequirement').value || '';
+  var res = await api('/api/chat-monitor/analyze', 'POST', {files: monSelectedFiles, requirement: requirement});
+  if (res && res.success) toast('分析已开始，请查看日志');
+  else toast((res && res.message) || '分析失败', 'err');
+}
+
+async function clearOldTodos() {
+  if (!confirm('确定要清理所有旧待办数据吗？')) return;
+  const res = await api('/api/todos/clear', 'POST');
+  toast(res && res.success ? (res.message || '已清理') : '清理失败', res && res.success ? '' : 'err');
+}
+
+async function generateWeeklyWithSelect() {
+  var sel = document.getElementById('weekSelect');
+  var week = sel ? sel.value : '';
+  const res = await api('/api/weekly', 'POST', {week: week});
+  if (res && res.success) toast('开始生成周报...');
+  else toast((res && res.message) || '启动失败', 'err');
+}
+
+// ====================== 会话分析 ======================
+var allChatNames = [];
+var selectedChats = [];  // 持久化的已选清单
+
+async function loadChatList() {
+  var list = document.getElementById('chatSelectList');
+  list.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#888">正在加载...</div>';
+  var res = await api('/api/sessions/list');
+  if (!res || !res.success) {
+    list.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#e74c3c">加载失败: ' + ((res && res.message) || '未知错误') + '</div>';
+    return;
+  }
+  allChatNames = res.sessions || [];
+  renderChatList(allChatNames);
+}
+
+function renderChatList(sessions) {
+  var list = document.getElementById('chatSelectList');
+  var html = '';
+  for (var i = 0; i < sessions.length; i++) {
+    var s = sessions[i];
+    var tag = s.is_group ? ' [群]' : ' [私]';
+    var checked = selectedChats.indexOf(s.name) >= 0 ? ' checked' : '';
+    html += '<label style="display:flex;align-items:center;padding:6px 14px;font-size:12px;color:#333;cursor:pointer;gap:6px">' +
+      '<input type="checkbox" value="' + escapeHtml(s.name) + '"' + checked + ' onchange="onChatToggle(this)">' +
+      escapeHtml(s.name) + '<span style="color:#888;font-size:11px">' + tag + '</span></label>';
+  }
+  list.innerHTML = html;
+}
+
+function onChatToggle(cb) {
+  var name = cb.value;
+  if (cb.checked) {
+    if (selectedChats.indexOf(name) < 0) selectedChats.push(name);
+  } else {
+    selectedChats = selectedChats.filter(function(n) { return n !== name; });
+  }
+  refreshSelectedBox();
+}
+
+function removeSelectedChat(name) {
+  selectedChats = selectedChats.filter(function(n) { return n !== name; });
+  refreshSelectedBox();
+  filterChatList();  // 刷新左侧列表的勾选状态
+}
+
+function refreshSelectedBox() {
+  var box = document.getElementById('chatSelectedBox');
+  var empty = document.getElementById('chatSelectedEmpty');
+  document.getElementById('chatSelectCount').textContent = selectedChats.length;
+
+  if (selectedChats.length === 0) {
+    if (empty) empty.style.display = 'block';
+    // 清空
+    var items = box.querySelectorAll('.selected-chat-item');
+    for (var i = 0; i < items.length; i++) items[i].remove();
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  box.innerHTML = '';
+  for (var i = 0; i < selectedChats.length; i++) {
+    var name = selectedChats[i];
+    var div = document.createElement('div');
+    div.className = 'selected-chat-item';
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12px;color:#333;border-bottom:1px solid #eee';
+    div.innerHTML = '<span>' + escapeHtml(name) + '</span>' +
+      '<span onclick="removeSelectedChat(\'' + escapeHtml(name).replace(/'/g, '&#39;') + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">✕</span>';
+    box.appendChild(div);
+  }
+}
+
+function filterChatList() {
+  var q = document.getElementById('chatSearch').value.toLowerCase();
+  var filtered = q ? allChatNames.filter(function(s) { return s.name.toLowerCase().indexOf(q) >= 0; }) : allChatNames;
+  renderChatList(filtered);
+}
+
+var analyzeRunning = false;
+
+async function startChatAnalyze() {
+  if (analyzeRunning) {
+    // 停止
+    var res = await api('/api/analyze/chat/stop', 'POST');
+    if (res && res.success) toast('正在停止...');
+    return;
+  }
+
+  var chats = selectedChats.slice();
+  if (chats.length === 0) { toast('请选择至少一个会话', 'err'); return; }
+
+  var d = document.getElementById('chatAnalyzeDate').value;
+  var t = document.getElementById('chatAnalyzeTime').value || '00:00';
+  if (d) {
+    var dt = new Date(d + 'T' + t);
+    if (dt > new Date()) { toast('不能设置未来时间', 'err'); return; }
+  }
+  var dateFrom = d ? (d + ' ' + t) : '';
+  var requirement = document.getElementById('chatAnalyzeRequirement').value.trim();
+
+  document.getElementById('chatAnalyzeStatus').textContent = '⏳ 分析中...';
+  document.getElementById('chatAnalyzeOpenBtn').style.display = 'none';
+
+  var res = await api('/api/analyze/chat', 'POST', {
+    chats: chats,
+    date_from: dateFrom,
+    requirement: requirement,
+  });
+  if (res && res.success) {
+    toast('开始分析 ' + chats.length + ' 个会话...');
+  } else {
+    document.getElementById('chatAnalyzeStatus').textContent = '';
+    toast((res && res.message) || '启动失败', 'err');
+  }
+}
+
+async function openChatAnalyzeReport() {
+  const res = await api('/api/analyze/chat/latest');
+  if (res && res.path) {
+    await api('/api/file/open', 'POST', {path: res.path});
+  } else {
+    toast('暂无报告', 'err');
+  }
+}
+
+// ====================== 密钥测试 ======================
+async function testKeys() {
+  toast('🔍 正在测试密钥...');
+  const res = await api('/api/init/test-keys', 'POST');
+  if (res && res.ok) {
+    toast('✅ 密钥有效（详情见日志）');
+  } else {
+    toast('❌ ' + ((res && res.message) || '测试失败'), 'err');
+  }
+}
+
+// ====================== File ops ======================
+async function openLatest(type) {
+  if (type === 'weekly-res') type = 'weekly';
+  const res = await api('/api/file/latest?type=' + type);
+  if (res && res.path) await api('/api/file/open', 'POST', {path: res.path});
+  else toast('暂无文件', 'err');
+}
+async function openOutputRoot() { await api('/api/file/open', 'POST', {path: ''}); }
+async function browseDbDir() {
+  const res = await api('/api/file/pick-folder', 'POST');
+  if (res && res.path) document.getElementById('cfgDbDir').value = res.path;
+}
+async function detectWxid() {
+  const dbDir = document.getElementById('cfgDbDir').value.trim();
+  if (!dbDir) { toast('请先填写数据库目录', 'err'); return; }
+  const res = await api('/api/init/detect-wxid', 'POST', {db_dir: dbDir});
+  if (res && res.success) {
+    document.getElementById('cfgWxid').value = res.wxid;
+    toast('已识别微信ID: ' + res.wxid);
+  } else {
+    toast((res && res.message) || '识别失败', 'err');
+  }
+}
+async function browseOutputDir() {
+  const res = await api('/api/file/pick-folder', 'POST');
+  if (res && res.path) document.getElementById('cfgOutputDir').value = res.path;
+}
+
+function quitApp() {
+  // 用 sendBeacon 保证页面卸载前请求必须发出
+  navigator.sendBeacon('/api/quit', '{}');
+}
+
+// ====================== SSE Log ======================
+var _sseRetryDelay = 1000;
+function startSSE() {
+  const source = new EventSource('/api/log/stream');
+  source.onmessage = function(e) {
+    try { const data = JSON.parse(e.data); addLog(data.time, data.text); } catch {}
+  };
+  source.onerror = function() {
+    source.close();
+    _sseRetryDelay = Math.min(_sseRetryDelay * 1.5, 30000);
+    setTimeout(startSSE, _sseRetryDelay);
+  };
+  source.onopen = function() { _sseRetryDelay = 1000; };
+}
+
+function addLog(time, text) {
+  const box = document.getElementById('logBox');
+  let cls = 'color:#9cdcfe';
+  if (text.includes('完成')) cls = 'color:#4ec9b0';
+  else if (text.includes('失败') || text.includes('错误')) cls = 'color:#f48771';
+  else if (text.includes('跳过')) cls = 'color:#ce9178';
+  box.insertAdjacentHTML('beforeend', '<span style="color:#666">[' + time + ']</span> <span style="' + cls + '">' + escapeHtml(text) + '</span>\n');
+  // 限制最大日志行数防止内存溢出
+  if (box.children.length > 2000) {
+    while (box.children.length > 1000) box.removeChild(box.firstChild);
+  }
+  box.scrollTop = box.scrollHeight;
+
+  // 检测会话分析进度
+  if (text.includes('正在获取')) {
+    document.getElementById('chatAnalyzeStatus').textContent = '⏳ ' + text;
+  } else if (text.includes('AI 分析中')) {
+    document.getElementById('chatAnalyzeStatus').textContent = '🤖 ' + text;
+  } else if (text.includes('分析完成')) {
+    document.getElementById('chatAnalyzeStatus').textContent = '✅ ' + text;
+    document.getElementById('chatAnalyzeOpenBtn').style.display = 'inline-flex';
+  } else if (text.includes('报告已生成')) {
+    document.getElementById('chatAnalyzeStatus').textContent = '✅ ' + text;
+    document.getElementById('chatAnalyzeOpenBtn').style.display = 'inline-flex';
+  } else if (text.includes('分析异常') || text.includes('分析失败')) {
+    document.getElementById('chatAnalyzeStatus').textContent = '❌ ' + text;
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ====================== Status poll ======================
+function updateAnalyzeBtn(running) {
+  analyzeRunning = running;
+  var btn = document.getElementById('chatAnalyzeBtn');
+  if (running) {
+    btn.textContent = '⏹ 停止分析';
+    btn.style.background = '#e74c3c';
+  } else {
+    btn.textContent = '🔍 开始分析';
+    btn.style.background = '';
+  }
+}
+
+setInterval(async function(){
+  const res = await api('/api/run/status');
+  if (!res) return;
+  autoRunning = res.auto_running;
+  updateAutoUI();
+  updateManualBtn(res.manual_running);
+  updateAnalyzeBtn(res.analyze_running);
+  document.getElementById('statWork').textContent = (res.stats && res.stats.work_items) || 0;
+  document.getElementById('statTodo').textContent = (res.stats && res.stats.todos) || 0;
+  document.getElementById('statRisk').textContent = (res.stats && res.stats.risks) || 0;
+  document.getElementById('lastRunTime').textContent = res.last_run || '--';
+  document.getElementById('nextRunTime').textContent = res.next_run || '--';
+}, 2000);
+
+// ====================== Activate ======================
+async function loadActivateStatus() {
+  var res = await api('/api/activate');
+  if (!res) return;
+  document.getElementById('activateHint').style.display = 'none';
+  if (res.activated) {
+    document.getElementById('activateActivated').style.display = '';
+    document.getElementById('activateForm').style.display = 'none';
+    document.getElementById('activateDaysLeft').textContent = (res.days_left > 0 ? res.days_left + ' 天' : '永久');
+    document.getElementById('activateExpireDate').textContent = res.expire_date || '未知';
+    document.getElementById('activateLicenseId').textContent = res.license_id || '-';
+    document.getElementById('activateHwId').textContent = res.hw_id || '-';
+  } else {
+    document.getElementById('activateActivated').style.display = 'none';
+    document.getElementById('activateForm').style.display = '';
+    document.getElementById('activateHwId2').textContent = res.hw_id || '-';
+  }
+}
+
+// 页面初始化时加载激活状态
+setTimeout(loadActivateStatus, 1000);
+
+// ====================== Toast ======================
+function toast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'err' ? ' err' : '');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.className = 'toast'; }, 2500);
+}
+</script>
+</body>
+</html>

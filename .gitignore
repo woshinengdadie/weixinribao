@@ -1,0 +1,40 @@
+# 敏感配置文件（含 API Key）
+config/config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.so
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# 输出文件
+output/
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 腾讯文档配置（含 token）
+.tencent_docs_config.json
+
+# 大文件
+models/*.gguf
+installer_output/

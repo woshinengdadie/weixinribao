@@ -1,0 +1,119 @@
+mode: cli
+wechat:
+  db_dir: ''
+  db_key: ''
+  my_name: ''  # 你的微信昵称
+  wxid: ''
+monitor:
+  chats:
+    all: true
+  important_contacts: []
+  exclude_chats:
+  - 文件传输助手
+  - 订阅号消息
+  - 公众号
+relevance_keywords:
+- '@我'
+- '@所有人'
+- 收到
+- 好的
+- 明白
+- 任务
+- 待办
+- 完成
+- 截止
+- deadline
+- 需要你
+- 你负责
+- 交给你
+- 帮我
+- 处理
+- 跟进
+- 安排
+- 汇报
+todo_keywords:
+- 待办
+- TODO
+- 需完成
+- 需要做
+- 别忘了
+- 记得
+- 请完成
+- 务必
+- 下班前
+- 今天内
+- 本周
+- 截止
+- deadline
+- 尽快
+llm:
+  enabled: true
+  provider: custom
+  api_key: ''  # 请填入你的 API Key（也支持环境变量 WECHAT_AGENT_API_KEY）
+  base_url: https://token-plan-cn.xiaomimimo.com/v1
+  model: mimo-v2.5-pro
+  # 本地小模型模式（与远程 API 互斥，启用后无需 API Key）
+  local_model:
+    enabled: false         # true = 启用本地模型，false = 使用远程 API
+    name: qwen2.5-0.5b    # 模型名称（qwen2.5-0.5b / qwen2.5-1.5b）
+    max_context: 16384     # 最大上下文长度（token），0.5B 支持 32K
+    threads: 4             # 推理线程数（设为 CPU 核心数）
+  rule_based:
+    max_messages_per_day: 200
+    time_window_minutes: 30
+output:
+  dir: ./output
+  format: markdown
+  include_raw: true
+  filename_template: 工作日报_{date}.md
+logging:
+  level: INFO
+  dir: ./logs
+rule_prompt: '请分析我今天的微信聊天记录，帮我完成以下内容：
+
+
+  ## 第一件事：每条对话的工作总结
+
+  对我参与的每条对话逐一生成一条工作总结：
+
+  - 简明扼要地概括核心工作内容（1句话）
+
+  - 说明我在其中的角色或做了什么
+
+
+  ## 第二件事：提取待办事项
+
+  仔细阅读我说的每一句话，结合上下文判断：
+
+  1. 我答应了要做的事
+
+  2. 别人明确让我做的事
+
+  3. 我承诺跟进的事
+
+
+  ## 第三件事：风险识别
+
+  识别可能存在的风险点，列出 0-3 条最值得关注的风险
+
+
+  ## 第四件事：工作感悟
+
+  写 1-2 句话的工作感悟或反思'
+schedule:
+  mode: scheduled
+  time: '17:30'
+  daily_once: true
+  interval_seconds: 1800
+weekly_auto: true
+
+# 会话监控：定时捞取指定群聊消息并保存为 .md 文件
+chat_monitor:
+  enabled: false
+  chats: []                    # 监控群聊名称列表
+  schedule:
+    mode: interval             # interval（间隔模式）| scheduled（定时模式）
+    interval_seconds: 3600    # 间隔模式：每 3600 秒（1小时）
+    scheduled_time: '17:30'   # 定时模式：每天 17:30
+  fetch:
+    first_run_hours: 24       # 首次运行默认捞最近 24 小时

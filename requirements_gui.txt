@@ -1,0 +1,9 @@
+pywebview>=4.0
+flask>=3.0
+openai>=1.0
+pyyaml>=6.0
+cryptography>=3.0
+requests>=2.0
+pywxdump
+wechat-cli @ git+https://github.com/fclwtt/wechat-cli.git
+llama-cpp-python>=0.3.0
