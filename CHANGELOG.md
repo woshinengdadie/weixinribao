@@ -1,5 +1,19 @@
 # 更新日志 (CHANGELOG)
 
+## v2.0.1.15 (2026-07-16)
+
+### 新增
+- **UI 全面升级（Design Token 体系）**：品牌蓝+中性灰 10 级色阶、4px/8px 间距网格、三级按钮（primary/secondary/ghost）、焦点无障碍环
+- **布局重构**：品牌渐变顶栏、侧栏分组折叠（图标 55px ⇄ 展开 200px + tooltip）、快速操作下拉菜单、仪表盘欢迎区（时段问候+日期徽章）、四色统计卡片（蓝💬/绿✅/黄⚠️/紫📊）
+- **代码健壮性增强**：静默异常降级日志（`_show_info`/`_show_error`）、Tkinter `pick_folder` try/finally 安全销毁、启动配置验证 `validate_config()`
+
+### 修复
+- **🔴 已选清单回空后空状态提示永远消失**：`refreshSelectedBox`/`refreshMonitorSelectedBox` 的 `innerHTML = ''` 销毁了 `#chatSelectedEmpty`/`#monChatSelectedEmpty`，改为 `querySelectorAll` + `remove()` 逐个清理
+- **🔴 `main.py` `validate_config` 使用未定义的 `logger`**：改为 `logging.error()`（logging 模块已导入）
+- **🔴 手动运行/会话分析存在 2 秒竞态窗口**：`manualRunning`/`analyzeRunning` 改为 API 调用前立即设标志 + 失败回滚，消除双击重复执行
+- **🟡 监控区 `save-btn` 100% 宽度挤压同行按钮**：两处改为 `btn btn--primary btn--md`
+- **🟡 会话名称含 `\` 触发 onclick 语法错误**：`safeName` 转义 `\\` → `\\\\`，`'` → `\x27`
+
 ## v2.0.1.14 (2026-07-14)
 
 ### 修复（实测 + 代码审查）

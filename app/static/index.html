@@ -1194,12 +1194,15 @@ async function manualRun() {
   const d = new Date(dateEl.value + 'T' + timeEl.value);
   if (d > new Date()) { toast('不能设置未来时间', 'err'); return; }
   const dateFrom = dateEl.value + ' ' + timeEl.value;
+  // 提前设标志，避免 await 往返期间双击重复触发
+  manualRunning = true;
+  updateManualBtn(true);
   const res = await api('/api/run/manual', 'POST', {date_from: dateFrom});
   if (res && res.success) {
-    manualRunning = true;  // 立即设标志，防止 2s 轮询窗口内重复点击
-    updateManualBtn(true);
     toast('开始手动运行...');
   } else {
+    manualRunning = false;
+    updateManualBtn(false);
     toast((res && res.message) || '启动失败', 'err');
   }
 }
@@ -1583,6 +1586,10 @@ async function startChatAnalyze() {
   document.getElementById('chatAnalyzeStatus').textContent = '⏳ 分析中...';
   document.getElementById('chatAnalyzeOpenBtn').style.display = 'none';
 
+  // 提前设标志，避免 await 往返期间双击重复触发
+  analyzeRunning = true;
+  updateAnalyzeBtn(true);
+
   var res = await api('/api/analyze/chat', 'POST', {
     chats: chats,
     date_from: dateFrom,
@@ -1591,6 +1598,8 @@ async function startChatAnalyze() {
   if (res && res.success) {
     toast('开始分析 ' + chats.length + ' 个会话...');
   } else {
+    analyzeRunning = false;
+    updateAnalyzeBtn(false);
     document.getElementById('chatAnalyzeStatus').textContent = '';
     toast((res && res.message) || '启动失败', 'err');
   }
