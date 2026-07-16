@@ -1,6 +1,6 @@
 {
-  "version": "2.0.1.15",
+  "version": "2.0.1.16",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "UI全面升级（品牌渐变顶栏、四色统计卡片、侧栏折叠）、修复已选清单空状态消失等5个BUG",
+  "notes": "新增自动更新检查、打包hook清理、UI全面升级",
   "date": "2026-07-16"
 }
