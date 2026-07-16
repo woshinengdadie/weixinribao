@@ -231,18 +231,11 @@ for /f "tokens=3" %%a in ('dir /s /-c "dist\WeChatWorkAgent" 2^>nul ^| findstr "
 for /f "tokens=3" %%a in ('dir /s /-c "dist\WeChatWorkAgent" 2^>nul ^| findstr "字节"') do set TOTAL_SIZE=%%a
 
 echo ============================================
-echo   打包完成！
-echo.
-echo   输出目录: dist\WeChatWorkAgent\
-echo.
-echo   文件列表:
-dir /b "dist\WeChatWorkAgent"
-echo.
-echo   给他人使用的方法:
-echo   1. 把 dist\WeChatWorkAgent\ 整个文件夹发给对方
-echo   2. 对方解压后，阅读「使用说明.txt」按步骤操作
-echo   3. 首次使用需要安装 vc_redist、提取微信密钥、在线激活
+echo.   🚀 下一步：发布更新
+echo.   请打开以下页面，把 installer_output\ 下的安装包拖进去发布：
+echo.   https://github.com/woshinengdadie/weixinribao/releases/new
 echo ============================================
 echo.
 
+start https://github.com/woshinengdadie/weixinribao/releases/new
 pause
