@@ -96,7 +96,7 @@ def validate_config(config: dict[str, Any]) -> None:
 
     if errors:
         for err in errors:
-            logger.error(f"配置验证失败: {err}")
+            logging.error(f"配置验证失败: {err}")
             print(f"[配置错误] {err}")
         raise SystemExit(1)
 

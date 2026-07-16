@@ -846,7 +846,7 @@ input[type="number"]:focus,select:focus{
               <label style="width:auto;font-size:11px;color:#888;padding-top:7px">小时（首次运行默认捞最近N小时）</label>
             </div>
             <div style="display:flex;gap:8px;margin:12px 0 0 120px">
-              <button class="save-btn" style="padding:6px 16px" onclick="saveMonitorConfig()">💾 保存</button>
+              <button class="btn btn--primary btn--md" onclick="saveMonitorConfig()">💾 保存</button>
               <button class="btn btn--secondary btn--md" id="monToggleBtn" onclick="toggleMonitor()">▶ 启动监控</button>
               <button class="btn btn--secondary btn--md" onclick="runMonitorNow()">⚡ 立即运行</button>
             </div>
@@ -860,7 +860,7 @@ input[type="number"]:focus,select:focus{
               <button class="btn btn--secondary btn--md" onclick="pickMonitorFiles()">📂 选择文件</button>
               <span id="monFileCount" style="font-size:12px;color:#888">未选择文件</span>
               <input type="text" id="monRequirement" placeholder="分析要求（如：总结测试问题进展和责任人）" style="flex:1;border:1px solid #d0d0d0;border-radius:7px;padding:6px 10px;font-size:12px;outline:none">
-              <button class="save-btn" style="padding:6px 16px" onclick="analyzeMonitorFiles()">🔍 发送分析</button>
+              <button class="btn btn--primary btn--md" onclick="analyzeMonitorFiles()">🔍 发送分析</button>
             </div>
           </div>
         </div>
@@ -1195,8 +1195,13 @@ async function manualRun() {
   if (d > new Date()) { toast('不能设置未来时间', 'err'); return; }
   const dateFrom = dateEl.value + ' ' + timeEl.value;
   const res = await api('/api/run/manual', 'POST', {date_from: dateFrom});
-  if (res && res.success) toast('开始手动运行...');
-  else toast((res && res.message) || '启动失败', 'err');
+  if (res && res.success) {
+    manualRunning = true;  // 立即设标志，防止 2s 轮询窗口内重复点击
+    updateManualBtn(true);
+    toast('开始手动运行...');
+  } else {
+    toast((res && res.message) || '启动失败', 'err');
+  }
 }
 
 function updateManualBtn(running) {
@@ -1321,24 +1326,27 @@ function removeMonitorChat(name) {
 
 function refreshMonitorSelectedBox() {
   var box = document.getElementById('monChatSelectedBox');
-  var empty = document.getElementById('monChatSelectedEmpty');
   document.getElementById('monChatSelectCount').textContent = monSelectedChats.length;
 
+  // 先清理旧的已选条目（保留空状态提示元素）
+  var items = box.querySelectorAll('.selected-mon-chat-item');
+  for (var i = 0; i < items.length; i++) items[i].remove();
+
+  var empty = document.getElementById('monChatSelectedEmpty');
   if (monSelectedChats.length === 0) {
     if (empty) empty.style.display = 'block';
-    var items = box.querySelectorAll('.selected-mon-chat-item');
-    for (var i = 0; i < items.length; i++) items[i].remove();
     return;
   }
   if (empty) empty.style.display = 'none';
-  box.innerHTML = '';
   for (var i = 0; i < monSelectedChats.length; i++) {
     var name = monSelectedChats[i];
     var div = document.createElement('div');
     div.className = 'selected-mon-chat-item';
     div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12px;color:#333;border-bottom:1px solid #eee';
+    // 使用 safeName 避免反斜杠破坏 JS 字符串
+    var safeName = name.replace(/\\/g, '\\\\').replace(/'/g, '\\x27');
     div.innerHTML = '<span>' + escapeHtml(name) + '</span>' +
-      '<span onclick="removeMonitorChat(\'' + escapeHtml(name).replace(/'/g, '&#39;') + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">\u2715</span>';
+      '<span onclick="removeMonitorChat(\'' + safeName + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">\u2715</span>';
     box.appendChild(div);
   }
 }
@@ -1520,25 +1528,26 @@ function removeSelectedChat(name) {
 
 function refreshSelectedBox() {
   var box = document.getElementById('chatSelectedBox');
-  var empty = document.getElementById('chatSelectedEmpty');
   document.getElementById('chatSelectCount').textContent = selectedChats.length;
 
+  // 先清理旧的已选条目（保留空状态提示元素）
+  var items = box.querySelectorAll('.selected-chat-item');
+  for (var i = 0; i < items.length; i++) items[i].remove();
+
+  var empty = document.getElementById('chatSelectedEmpty');
   if (selectedChats.length === 0) {
     if (empty) empty.style.display = 'block';
-    // 清空
-    var items = box.querySelectorAll('.selected-chat-item');
-    for (var i = 0; i < items.length; i++) items[i].remove();
     return;
   }
   if (empty) empty.style.display = 'none';
-  box.innerHTML = '';
   for (var i = 0; i < selectedChats.length; i++) {
     var name = selectedChats[i];
     var div = document.createElement('div');
     div.className = 'selected-chat-item';
     div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12px;color:#333;border-bottom:1px solid #eee';
+    var safeName = name.replace(/\\/g, '\\\\').replace(/'/g, '\\x27');
     div.innerHTML = '<span>' + escapeHtml(name) + '</span>' +
-      '<span onclick="removeSelectedChat(\'' + escapeHtml(name).replace(/'/g, '&#39;') + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">✕</span>';
+      '<span onclick="removeSelectedChat(\'' + safeName + '\')" style="color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px">✕</span>';
     box.appendChild(div);
   }
 }
