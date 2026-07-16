@@ -26,12 +26,12 @@ datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['D:\\repote2\\run.py'],
+    ['run.py'],
     pathex=['src', 'app'],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=['D:\\repote2\\hooks'],
+    hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -56,8 +56,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='D:\\repote2\\build\\version_info.txt',
-    icon=['D:\\repote2\\assets\\app_icon.ico'],
+    version='build\\version_info.txt',
+    icon=['assets\\app_icon.ico'],
 )
 coll = COLLECT(
     exe,
