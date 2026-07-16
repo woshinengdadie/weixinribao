@@ -1,5 +1,5 @@
 @echo off
-chcp 936 >nul
+chcp 65001 >nul
 title 微信工作日报助手 - 生成安装包
 
 cd /d "%~dp0"
@@ -63,7 +63,7 @@ echo   OK 安装包生成完成！
 echo.
 echo   文件: installer_output\WeChatWorkAgent_Setup_*.exe
 echo.
-echo.   ? 下一步：发布更新
+echo.   [下一步] 发布更新
 echo.   把 installer_output\ 下的安装包拖入下方页面发布：
 echo.   https://github.com/woshinengdadie/weixinribao/releases/new
 echo ============================================

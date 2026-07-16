@@ -1,6 +1,6 @@
 {
-  "version": "2.0.1.16",
+  "version": "2.0.1.17",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "新增自动更新检查、打包hook清理、UI全面升级",
+  "notes": "新增自动更新检查、构建脚本自动打开发布页",
   "date": "2026-07-16"
 }
