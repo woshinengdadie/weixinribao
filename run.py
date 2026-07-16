@@ -387,6 +387,69 @@ def _start_browser_fallback():
     )
 
 
+def _parse_version(ver_str: str) -> tuple:
+    """将版本号字符串转为可比较的整数元组，如 '2.0.1.15' → (2,0,1,15)"""
+    try:
+        return tuple(int(x) for x in ver_str.strip().split("."))
+    except Exception:
+        return (0,)
+
+
+UPDATE_URL = "https://raw.githubusercontent.com/woshinengdadie/weixinribao/main/updates.json"
+
+
+def check_for_updates(silent: bool = True) -> dict | None:
+    """检查是否有新版本可用
+
+    Args:
+        silent: True 时仅在发现新版本时弹窗；False 时无论有无更新都弹窗（手动检查）
+
+    Returns:
+        有新版时返回服务器版本信息 dict，否则返回 None
+    """
+    try:
+        req = urllib.request.Request(UPDATE_URL)
+        req.add_header("User-Agent", f"WeChatWorkAgent/{__version__}")
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            import json
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        logger.warning(f"检查更新失败: {e}")
+        if not silent:
+            _show_info("检查更新", f"无法连接到更新服务器\n\n{str(e)[:200]}")
+        return None
+
+    remote_ver = data.get("version", "")
+    local_tuple = _parse_version(__version__)
+    remote_tuple = _parse_version(remote_ver)
+
+    if remote_tuple <= local_tuple:
+        if not silent:
+            _show_info("检查更新", f"当前已是最新版本 v{__version__}")
+        return None
+
+    # 有新版本
+    notes = data.get("notes", "无更新说明")
+    dl_url = data.get("url", "")
+    date = data.get("date", "")
+    msg = (
+        f"发现新版本 v{remote_ver}（当前 v{__version__}）\n"
+        f"发布日期: {date}\n\n"
+        f"更新内容:\n{notes}\n\n"
+        f"下载地址:\n{dl_url}\n\n"
+        f"是否现在打开下载页面？"
+    )
+    _show_info("发现新版本", msg)
+    # 尝试打开下载页
+    if dl_url:
+        try:
+            import webbrowser
+            webbrowser.open(dl_url)
+        except Exception:
+            pass
+    return data
+
+
 def _show_activation_dialog(lc):
     """弹出激活码输入框"""
     import tkinter as tk
@@ -485,6 +548,9 @@ def main():
         logger.error("Flask 启动超时")
         _show_error("启动失败", "Flask 后端启动超时，请检查依赖是否完整。\n查看 logs/ 目录获取详细信息。")
         sys.exit(1)
+
+    # 2.5 后台检查更新（不阻塞启动流程，静默模式）
+    threading.Thread(target=check_for_updates, args=(True,), daemon=True).start()
 
     # 3. 启动 PyWebView 桌面窗口
     try:

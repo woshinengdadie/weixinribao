@@ -1336,6 +1336,48 @@ def api_quit():
     return jsonify({"success": True, "message": "正在退出..."})
 
 
+@app.route("/api/update/check", methods=["GET"])
+def api_update_check():
+    """手动检查更新，返回版本信息和是否有更新"""
+    import json as _json
+    try:
+        req = urllib.request.Request(
+            "https://raw.githubusercontent.com/woshinengdadie/weixinribao/main/updates.json"
+        )
+        req.add_header("User-Agent", "WeChatWorkAgent/check")
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return jsonify({"success": False, "message": f"检查更新失败: {str(e)[:200]}"})
+
+    remote_ver = data.get("version", "0")
+    def _parse(v):
+        try: return tuple(int(x) for x in v.strip().split("."))
+        except: return (0,)
+
+    local_ver_str = "unknown"
+    try:
+        vfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "VERSION")
+        if getattr(sys, "frozen", False):
+            vfile = os.path.join(os.path.dirname(sys.executable), "VERSION")
+        if os.path.exists(vfile):
+            with open(vfile, encoding="utf-8") as f:
+                local_ver_str = f.read().strip()
+    except Exception:
+        pass
+
+    has_update = _parse(remote_ver) > _parse(local_ver_str)
+    return jsonify({
+        "success": True,
+        "has_update": has_update,
+        "current_version": local_ver_str,
+        "latest_version": remote_ver,
+        "notes": data.get("notes", ""),
+        "url": data.get("url", ""),
+        "date": data.get("date", ""),
+    })
+
+
 @app.route("/api/weekly/list", methods=["GET"])
 def api_weekly_list():
     reports = _get_weekly_reports()

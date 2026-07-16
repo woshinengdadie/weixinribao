@@ -922,7 +922,11 @@ input[type="number"]:focus,select:focus{
   <!-- 状态栏 -->
   <div class="status-bar">
     <span><span class="dot"></span><span id="statusText">就绪</span></span>
-    <span>上次运行: <span id="lastRunTime">--</span> ｜ 下次运行: <span id="nextRunTime">--</span></span>
+    <span>
+      上次运行: <span id="lastRunTime">--</span> ｜ 下次运行: <span id="nextRunTime">--</span>
+      <span style="margin-left:12px;cursor:pointer;color:var(--brand-500)" onclick="checkUpdate()" title="检查更新">🔄 检查更新</span>
+      <span id="updateBadge" style="display:none;margin-left:6px;background:var(--error);color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;cursor:pointer" onclick="checkUpdate()">新版</span>
+    </span>
   </div>
 </div>
 
@@ -1754,6 +1758,34 @@ async function loadActivateStatus() {
 
 // 页面初始化时加载激活状态
 setTimeout(loadActivateStatus, 1000);
+
+// ====================== 检查更新 ======================
+async function checkUpdate() {
+  toast('🔄 正在检查更新...');
+  var res = await api('/api/update/check');
+  if (!res || !res.success) {
+    toast(res ? res.message : '检查失败', 'err');
+    return;
+  }
+  if (res.has_update) {
+    var msg = '发现新版本 v' + res.latest_version + '（当前 v' + res.current_version + '）\n\n';
+    if (res.notes) msg += res.notes + '\n\n';
+    msg += '是否打开下载页面？';
+    if (confirm(msg)) {
+      await api('/api/file/open', 'POST', {path: res.url || ''});
+    }
+  } else {
+    toast('✅ 已是最新版本 v' + res.current_version);
+  }
+}
+// 启动后延迟检查更新（静默，有更新才提示）
+setTimeout(async function(){
+  var res = await api('/api/update/check');
+  if (res && res.success && res.has_update) {
+    var badge = document.getElementById('updateBadge');
+    if (badge) badge.style.display = 'inline-block';
+  }
+}, 3000);
 
 // ====================== Toast ======================
 function toast(msg, type) {
