@@ -176,11 +176,15 @@ def update_run_py_version(ver: str) -> None:
         print(f"  已更新 run.py __version__ -> {ver_str}")
 
 
-def update_changelog(ver: str) -> None:
+def update_changelog(ver: str, message: str | None = None) -> None:
     """在 CHANGELOG.md 顶部插入新版本条目（如果还不存在）
 
     使用完整版本号（如 v2.0.1.13）作为去重标识，避免被同主次版本号
     的其他 build 条目误判为已存在。
+
+    Args:
+        ver: 版本号字符串
+        message: 变更说明（可选）。缺省时仅打印提示，不写入空条目。
     """
     changelog_path = PROJECT / "CHANGELOG.md"
     if not changelog_path.exists():
@@ -198,8 +202,20 @@ def update_changelog(ver: str) -> None:
         print(f"  CHANGELOG.md 中 {version_header} 已存在，跳过")
         return
 
+    # 如果没有提供变更说明，拒绝写入空条目
+    if not message or not message.strip():
+        print(f"  [!] CHANGELOG.md 未更新：{version_header} 缺少 --message 变更说明，已跳过")
+        print(f"      请手动编辑 CHANGELOG.md 或使用 --message 参数指定变更内容")
+        return
+
     # 在第一行标题后插入新版本条目
-    new_entry = f"{version_header} ({today})\n\n### 变更\n- \n\n"
+    lines = message.strip().splitlines()
+    if len(lines) == 1 and not lines[0].startswith("- "):
+        # 单行简写，自动包装
+        changelog_entry = f"- {lines[0]}"
+    else:
+        changelog_entry = "\n".join(f"- {line.lstrip('- ')}" if not line.startswith("- ") else line for line in lines)
+    new_entry = f"{version_header} ({today})\n\n### 变更\n{changelog_entry}\n\n"
     # 找到第一个 ## 开头的位置之前插入
     first_section = content.find("\n## ", 1)  # 跳过标题行
     if first_section == -1:
@@ -233,9 +249,11 @@ if __name__ == "__main__":
 
     changelog_parser = sub.add_parser("update-changelog", help="在 CHANGELOG.md 中添加新版本条目")
     _ = changelog_parser.add_argument("--ver", default=None, help="版本号（默认从 VERSION 读取）")
+    _ = changelog_parser.add_argument("--message", "-m", default=None, help="变更说明（必填，缺省拒绝写入空条目）")
 
     sync_parser = sub.add_parser("sync-all", help="同步版本到所有文件（iss, run.py, changelog）")
     _ = sync_parser.add_argument("--ver", default=None, help="版本号（默认从 VERSION 读取）")
+    _ = sync_parser.add_argument("--message", "-m", default=None, help="CHANGELOG 变更说明（缺省跳过 changelog 写入）")
 
     args = parser.parse_args()
 
@@ -267,16 +285,20 @@ if __name__ == "__main__":
 
     elif args.cmd == "update-changelog":
         ver = args.ver or read_version()
-        update_changelog(ver)
-        print("已更新 CHANGELOG.md")
+        update_changelog(ver, getattr(args, "message", None))
+        # 只有实际写入时才打印完成
+        if getattr(args, "message", None):
+            print("已更新 CHANGELOG.md")
 
     elif args.cmd == "sync-all":
         ver = args.ver or read_version()
         update_installer_iss(ver)
         update_run_py_version(ver)
         generate_version_file(ver)
-        update_changelog(ver)
-        print("已同步所有文件（version_info.txt + installer.iss + run.py + CHANGELOG.md）")
+        update_changelog(ver, getattr(args, "message", None))
+        print("已同步所有文件（version_info.txt + installer.iss + run.py）")
+        if getattr(args, "message", None):
+            print("  + CHANGELOG.md")
 
     else:
         parser.print_help()

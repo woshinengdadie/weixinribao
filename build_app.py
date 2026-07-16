@@ -72,7 +72,6 @@ def step3_build() -> bool:
     new_ver = ver_mod.auto_bump()
     ver_file = ver_mod.generate_version_file(new_ver)
     ver_mod.update_run_py_version(new_ver)
-    ver_mod.update_changelog(new_ver)
 
     print("[3/5] 构建 EXE（可能需要 3-10 分钟）...")
 

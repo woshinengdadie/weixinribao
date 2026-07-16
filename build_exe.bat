@@ -133,8 +133,8 @@ if %errorlevel% neq 0 (
 )
 %PYTHON% tools\version.py gen-file -o build\version_info.txt
 %PYTHON% tools\version.py update-run
-%PYTHON% tools\version.py update-changelog
-echo   [OK] 版本号已更新
+echo   [OK] 版本号已更新 （VERSION + run.py + version_info.txt）
+echo   [提示] CHANGELOG.md 请手动编辑或使用: python tools\version.py update-changelog -m "说明"
 echo.
 
 ::: PyInstaller 构建

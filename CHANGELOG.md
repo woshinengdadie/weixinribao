@@ -7,6 +7,9 @@
 - **更新发布流程**：打包脚本完成后自动打开 GitHub Releases 上传页面
 - **打包优化**：hook 文件清理过时 hidden imports，消除构建警告
 
+### 修复
+- 检查更新接口 `NameError: name 'urllib' is not defined`（`server.py` 遗漏 `import urllib.request`）
+
 ## v2.0.1.16 (2026-07-16)
 
 ### 新增
