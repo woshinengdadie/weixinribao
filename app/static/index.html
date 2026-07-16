@@ -111,23 +111,32 @@ html,body{
    ================================================================ */
 .app{display:flex;flex-direction:column;height:100vh;width:100vw}
 
-/* 顶栏 */
+/* 顶栏 — 品牌渐变 */
 .titlebar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:var(--space-2) var(--space-4);
-  background:var(--bg-surface);
-  border-bottom:1px solid var(--border-default);
-  flex-shrink:0;
+  padding:var(--space-2) var(--space-5);
+  background:linear-gradient(135deg, var(--brand-600) 0%, var(--brand-700) 60%, var(--brand-800) 100%);
+  flex-shrink:0;min-height:44px;
 }
 .titlebar h1{
-  font-size:var(--text-lg);font-weight:var(--font-semibold);
-  color:var(--text-primary);letter-spacing:.3px;
+  font-size:var(--text-base);font-weight:var(--font-semibold);
+  color:#fff;letter-spacing:.3px;
+  display:flex;align-items:center;gap:var(--space-2);
+}
+.titlebar .brand-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--success);
+  box-shadow:0 0 6px rgba(16,185,129,0.6);
+  flex-shrink:0;
+}
+.titlebar .tbar-actions{
+  display:flex;align-items:center;gap:var(--space-1);
 }
 
-/* 工具栏 */
+/* 工具栏 — 合并到标题栏下方，仅做快捷操作栏 */
 .toolbar{
   display:flex;align-items:center;gap:var(--space-2);
-  padding:var(--space-2) var(--space-4);
+  padding:var(--space-1) var(--space-5);
   background:var(--bg-surface);
   border-bottom:1px solid var(--border-default);
   flex-shrink:0;flex-wrap:wrap;
@@ -137,25 +146,35 @@ html,body{
 /* 中部: 侧栏 + 主内容 */
 .main-area{display:flex;flex:1;min-height:0}
 
-/* 侧栏 */
+/* 侧栏 — 加宽 + 分组标题 */
 .sidebar{
-  width:170px;background:var(--bg-subtle);
+  width:200px;background:var(--bg-subtle);
   border-right:1px solid var(--border-default);
-  padding:var(--space-2) 0;flex-shrink:0;overflow-y:auto;
+  padding:var(--space-3) 0;flex-shrink:0;overflow-y:auto;
+}
+.sidebar-section-title{
+  font-size:10px;text-transform:uppercase;
+  color:var(--text-muted);font-weight:var(--font-semibold);
+  letter-spacing:.8px;
+  padding:var(--space-3) var(--space-4) var(--space-1);
+  cursor:default;user-select:none;
 }
 .sidebar-item{
   display:flex;align-items:center;gap:var(--space-2);
-  padding:var(--space-2) var(--space-4);
+  padding:7px var(--space-4);margin:1px var(--space-2);
   font-size:var(--text-sm);color:var(--text-secondary);
   cursor:pointer;transition:all var(--transition-fast);
+  border-radius:var(--radius-md);
   border-left:3px solid transparent;
 }
 .sidebar-item:hover{background:var(--gray-100);color:var(--text-primary)}
 .sidebar-item.active{
   background:var(--brand-50);color:var(--brand-600);
-  font-weight:var(--font-semibold);border-left-color:var(--brand-500);
+  font-weight:var(--font-semibold);
+  border-left-color:var(--brand-500);
+  box-shadow:inset 0 0 0 1px rgba(59,130,246,0.08);
 }
-.sidebar-item .icon{font-size:15px;width:22px;text-align:center}
+.sidebar-item .icon{font-size:15px;width:22px;text-align:center;flex-shrink:0}
 
 /* 主面板 */
 .main{flex:1;background:var(--bg-surface);display:flex;flex-direction:column;min-height:0;overflow:hidden}
@@ -176,20 +195,80 @@ html,body{
   box-shadow:var(--shadow-xs);
 }
 
-/* 仪表盘统计卡片 */
+/* 仪表盘欢迎区 */
+.dash-hero{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:var(--space-5);
+  padding:var(--space-5);
+  background:linear-gradient(135deg, var(--brand-50) 0%, #f0f7ff 100%);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--brand-100);
+}
+.dash-hero .greeting{font-size:var(--text-xl);font-weight:var(--font-semibold);color:var(--text-primary)}
+.dash-hero .greeting em{font-style:normal;color:var(--brand-600)}
+.dash-hero .date-badge{
+  font-size:var(--text-xs);color:var(--text-muted);
+  background:var(--bg-surface);padding:var(--space-1) var(--space-3);
+  border-radius:999px;border:1px solid var(--border-default);
+}
+
+/* 仪表盘统计卡片 — 彩色变体 */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4)}
 .stat-card{
-  background:linear-gradient(135deg, var(--gray-50), var(--gray-100));
+  position:relative;overflow:hidden;
   border-radius:var(--radius-xl);
   padding:var(--space-4) var(--space-5);
-  border:1px solid var(--border-default);
+  border:1px solid transparent;
   transition:transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor:default;
 }
-.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.stat-card .num{font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--text-primary);line-height:1.1}
-.stat-card .lbl{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-1)}
+.stat-card::before{
+  content:'';position:absolute;top:-20px;right:-20px;
+  width:80px;height:80px;border-radius:50%;
+  opacity:0.12;pointer-events:none;
+}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.stat-card .stat-icon{font-size:22px;margin-bottom:var(--space-2);display:block}
+.stat-card .num{font-size:var(--text-2xl);font-weight:var(--font-bold);line-height:1.1}
+.stat-card .lbl{font-size:var(--text-xs);margin-top:var(--space-1)}
 
-/* 操作栏 */
+/* 蓝色 — 参与会话 */
+.stat-card.blue{
+  background:linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color:#bfdbfe;
+}
+.stat-card.blue::before{background:var(--brand-500)}
+.stat-card.blue .num,.stat-card.blue .stat-icon{color:var(--brand-600)}
+.stat-card.blue .lbl{color:var(--brand-400)}
+
+/* 绿色 — 待办事项 */
+.stat-card.green{
+  background:linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-color:#a7f3d0;
+}
+.stat-card.green::before{background:var(--success)}
+.stat-card.green .num,.stat-card.green .stat-icon{color:#059669}
+.stat-card.green .lbl{color:#6ee7b7}
+
+/* 黄色 — 风险提醒 */
+.stat-card.amber{
+  background:linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-color:#fde68a;
+}
+.stat-card.amber::before{background:var(--warning)}
+.stat-card.amber .num,.stat-card.amber .stat-icon{color:#d97706}
+.stat-card.amber .lbl{color:#fbbf24}
+
+/* 紫色 — 本周周报 */
+.stat-card.purple{
+  background:linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border-color:#c4b5fd;
+}
+.stat-card.purple::before{background:#8b5cf6}
+.stat-card.purple .num,.stat-card.purple .stat-icon{color:#7c3aed}
+.stat-card.purple .lbl{color:#a78bfa}
+
+/* 操作栏 — 分区 */
 .action-bar{
   display:flex;align-items:center;gap:var(--space-2);
   padding:var(--space-3) var(--space-4);
@@ -198,7 +277,30 @@ html,body{
   border:1px solid var(--border-default);
   margin-bottom:var(--space-4);flex-wrap:wrap;
 }
-.action-bar .sep{width:1px;height:24px;background:var(--gray-300);margin:0 var(--space-1)}
+.action-bar .sep{width:1px;height:28px;background:var(--gray-300);margin:0 var(--space-2)}
+.action-bar .action-group{display:flex;align-items:center;gap:var(--space-2)}
+
+/* 下拉菜单 */
+.dropdown{position:relative;display:inline-flex}
+.dropdown-menu{
+  display:none;position:absolute;top:100%;right:0;
+  min-width:180px;background:var(--bg-surface);
+  border:1px solid var(--border-default);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);padding:var(--space-1) 0;z-index:100;
+  margin-top:var(--space-1);
+}
+.dropdown.open .dropdown-menu{display:block}
+.dropdown-item{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:var(--space-2) var(--space-3);
+  font-size:var(--text-sm);color:var(--text-primary);
+  cursor:pointer;transition:background var(--transition-fast);
+  border:none;background:none;width:100%;text-align:left;
+  white-space:nowrap;
+}
+.dropdown-item:hover{background:var(--brand-50);color:var(--brand-600)}
+.dropdown-item .icon{font-size:14px;width:20px;text-align:center}
+.dropdown-divider{height:1px;background:var(--border-default);margin:var(--space-1) 0}
 
 /* ================================================================
    日志区
@@ -435,33 +537,36 @@ input[type="number"]:focus,select:focus{
 <div class="app">
   <!-- 顶栏 -->
   <div class="titlebar">
-    <h1>📋 微信工作日报助手</h1>
-    <span style="display:flex;gap:7px">
-      <span style="width:11px;height:11px;border-radius:50%;background:#4CAF50;display:inline-block" title="正常运行"></span>
-    </span>
+    <h1><span class="brand-dot"></span> 微信工作日报助手</h1>
+    <div class="tbar-actions">
+      <div class="dropdown" id="quickMenu">
+        <button class="btn btn--primary btn--sm" onclick="toggleDropdown(event,'quickMenu')" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:#fff">📋 快速操作 ▾</button>
+        <div class="dropdown-menu">
+          <button class="dropdown-item" onclick="openLatest('folder')"><span class="icon">📂</span> 打开文件夹</button>
+          <button class="dropdown-item" onclick="openLatest('summary')"><span class="icon">📄</span> 工作总结</button>
+          <button class="dropdown-item" onclick="openLatest('detail')"><span class="icon">📋</span> 对话详情</button>
+          <button class="dropdown-item" onclick="openLatest('todos')"><span class="icon">📝</span> 待办事项</button>
+          <button class="dropdown-item" onclick="openLatest('weekly-res')"><span class="icon">📊</span> 工作周报</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" onclick="openOutputRoot()"><span class="icon">📁</span> 历史文档</button>
+        </div>
+      </div>
+      <button class="btn btn--ghost btn--md btn--danger" onclick="quitApp()" style="color:rgba(255,255,255,0.85);border-color:rgba(255,255,255,0.3)">🚪 退出</button>
+    </div>
   </div>
 
-  <!-- 工具栏 -->
-  <div class="toolbar">
-    <button class="btn btn--secondary btn--md" onclick="openLatest('folder')">📂 打开文件夹</button>
-    <button class="btn btn--secondary btn--md" onclick="openLatest('summary')">📄 工作总结</button>
-    <button class="btn btn--secondary btn--md" onclick="openLatest('detail')">📋 对话详情</button>
-    <button class="btn btn--secondary btn--md" onclick="openLatest('todos')">📝 待办事项</button>
-    <button class="btn btn--secondary btn--md" onclick="openLatest('weekly-res')">📊 工作周报</button>
-    <span class="spacer"></span>
-    <button class="btn btn--secondary btn--md" onclick="openOutputRoot()">📁 历史文档</button>
-    <button class="btn btn--ghost btn--md btn--danger" onclick="quitApp()">🚪 退出</button>
-  </div>
 
   <!-- 中部: 侧栏 + 主区域 -->
   <div class="main-area">
     <div class="sidebar" id="sidebar">
+      <div class="sidebar-section-title">核心功能</div>
       <div class="sidebar-item active" onclick="switchTab(this,'panel-dash')"><span class="icon">🏠</span> 首页</div>
-      <div class="sidebar-item" onclick="switchTab(this,'panel-basic')"><span class="icon">⚙️</span> 基本设置</div>
-      <div class="sidebar-item" onclick="switchTab(this,'panel-schedule')"><span class="icon">⏰</span> 定时任务</div>
-      <div class="sidebar-item" onclick="switchTab(this,'panel-weekly')"><span class="icon">📊</span> 周报</div>
       <div class="sidebar-item" onclick="switchTab(this,'panel-chat-analyze')"><span class="icon">🔍</span> 会话分析</div>
       <div class="sidebar-item" onclick="switchTab(this,'panel-chat-monitor');loadMonitorConfig()"><span class="icon">📡</span> 会话监控</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-weekly')"><span class="icon">📊</span> 周报</div>
+      <div class="sidebar-section-title">系统配置</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-basic')"><span class="icon">⚙️</span> 基本设置</div>
+      <div class="sidebar-item" onclick="switchTab(this,'panel-schedule')"><span class="icon">⏰</span> 定时任务</div>
       <div class="sidebar-item" onclick="switchTab(this,'panel-rule')"><span class="icon">📝</span> 规则逻辑</div>
       <div class="sidebar-item" onclick="switchTab(this,'panel-block')"><span class="icon">🚫</span> 屏蔽列表</div>
       <div class="sidebar-item" onclick="switchTab(this,'panel-key')"><span class="icon">🔑</span> 密钥配置</div>
@@ -472,32 +577,59 @@ input[type="number"]:focus,select:focus{
       <!-- ==================== 首页仪表盘 ==================== -->
       <div id="panel-dash" class="tab-panel active">
         <div class="scroll-area" style="display:flex;flex-direction:column">
-          <!-- 操作栏 -->
-          <div class="action-bar">
-            <button class="btn btn--primary btn--md" id="manualRunBtn" onclick="manualRun()">▶ 手动运行</button>
-            <div class="time-input">
-              <span>从</span>
-              <input type="date" id="manualDate">
-              <input type="time" id="manualTime" value="00:00">
-              <span style="color:#888">→ 现在</span>
-            </div>
-            <div class="sep"></div>
-            <button class="btn btn--secondary btn--md" id="autoBtn" onclick="toggleAuto()" style="min-width:110px">⏸ 自动运行</button>
-            <span id="autoStatus" style="font-size:12px;color:#888;white-space:nowrap"><span class="dot"></span>已停止</span>
-            <div class="sep"></div>
-            <button class="btn btn--primary btn--md" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
-            <div class="sep"></div>
-            <button class="btn btn--secondary btn--md" onclick="testKeys()">🔍 测试密钥</button>
-            <div class="sep"></div>
-            <button class="btn btn--ghost btn--md btn--danger" onclick="clearOldTodos()">🗑 清理旧待办</button>
+          <!-- 欢迎区 -->
+          <div class="dash-hero">
+            <div class="greeting" id="dashGreeting">👋 下午好，<em>用户</em></div>
+            <div class="date-badge" id="dashDate">--</div>
           </div>
 
           <!-- 统计卡片 -->
           <div class="stat-grid" style="flex-shrink:0">
-            <div class="stat-card"><div class="num" id="statWork">0</div><div class="lbl">参与会话数</div></div>
-            <div class="stat-card"><div class="num" id="statTodo">0</div><div class="lbl">待办事项</div></div>
-            <div class="stat-card"><div class="num" id="statRisk">0</div><div class="lbl">风险提醒</div></div>
-            <div class="stat-card"><div class="num" id="statWeekly">0</div><div class="lbl">本周周报</div></div>
+            <div class="stat-card blue">
+              <span class="stat-icon">💬</span>
+              <div class="num" id="statWork">0</div>
+              <div class="lbl">参与会话数</div>
+            </div>
+            <div class="stat-card green">
+              <span class="stat-icon">✅</span>
+              <div class="num" id="statTodo">0</div>
+              <div class="lbl">待办事项</div>
+            </div>
+            <div class="stat-card amber">
+              <span class="stat-icon">⚠️</span>
+              <div class="num" id="statRisk">0</div>
+              <div class="lbl">风险提醒</div>
+            </div>
+            <div class="stat-card purple">
+              <span class="stat-icon">📊</span>
+              <div class="num" id="statWeekly">0</div>
+              <div class="lbl">本周周报</div>
+            </div>
+          </div>
+
+          <!-- 操作栏 -->
+          <div class="action-bar">
+            <div class="action-group">
+              <button class="btn btn--primary btn--md" id="manualRunBtn" onclick="manualRun()">▶ 手动运行</button>
+              <div class="time-input">
+                <span>从</span>
+                <input type="date" id="manualDate">
+                <input type="time" id="manualTime" value="00:00">
+                <span style="color:#888">→ 现在</span>
+              </div>
+            </div>
+            <div class="sep"></div>
+            <div class="action-group">
+              <button class="btn btn--secondary btn--md" id="autoBtn" onclick="toggleAuto()" style="min-width:110px">⏸ 自动运行</button>
+              <span id="autoStatus" style="font-size:12px;color:#888;white-space:nowrap"><span class="dot"></span>已停止</span>
+            </div>
+            <div class="sep"></div>
+            <div class="action-group">
+              <button class="btn btn--primary btn--md" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
+              <button class="btn btn--secondary btn--md" onclick="testKeys()">🔍 测试密钥</button>
+            </div>
+            <span class="spacer" style="flex:1"></span>
+            <button class="btn btn--ghost btn--md btn--danger" onclick="clearOldTodos()">🗑 清理旧待办</button>
           </div>
 
           <!-- 日志 -->
@@ -796,6 +928,33 @@ input[type="number"]:focus,select:focus{
 // ====================== State ======================
 let autoRunning = false;
 
+// ====================== 下拉菜单 ======================
+function toggleDropdown(e, id) {
+  e.stopPropagation();
+  var dd = document.getElementById(id);
+  if (!dd) return;
+  var was = dd.classList.contains('open');
+  // 关闭所有
+  document.querySelectorAll('.dropdown.open').forEach(function(d){d.classList.remove('open')});
+  if (!was) dd.classList.add('open');
+}
+document.addEventListener('click', function(){document.querySelectorAll('.dropdown.open').forEach(function(d){d.classList.remove('open')})});
+
+// ====================== 欢迎语 ======================
+function updateGreeting(name) {
+  var h = new Date().getHours();
+  var g = h < 6 ? '🌙 夜深了' : h < 9 ? '🌅 早上好' : h < 12 ? '☀️ 上午好' : h < 14 ? '🌤 中午好' : h < 18 ? '👋 下午好' : '🌆 晚上好';
+  var el = document.getElementById('dashGreeting');
+  if (el) el.innerHTML = g + '，<em>' + escapeHtml(name || '用户') + '</em>';
+  var db = document.getElementById('dashDate');
+  if (db) {
+    var now = new Date();
+    var w = ['日','一','二','三','四','五','六'];
+    db.textContent = now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 周'+w[now.getDay()];
+  }
+}
+setInterval(function(){var db=document.getElementById('dashDate');if(db){var n=new Date();var w=['日','一','二','三','四','五','六'];db.textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日 周'+w[n.getDay()]}},60000);
+
 // ====================== Tab switching ======================
 function switchTab(el, panelId) {
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
@@ -831,7 +990,9 @@ async function api(url, method='GET', data=null) {
 async function loadConfig() {
   const cfg = await api('/api/config');
   if (!cfg) return;
-  document.getElementById('cfgMyName').value = cfg.my_name || '';
+  var cfgMyName = document.getElementById('cfgMyName');
+  cfgMyName.value = cfg.my_name || '';
+  updateGreeting(cfg.my_name || '');
   document.getElementById('cfgWxid').value = cfg.wxid || '';
   document.getElementById('cfgApiKey').value = cfg.api_key || '';
   document.getElementById('cfgBaseUrl').value = cfg.base_url || 'https://token-plan-cn.xiaomimimo.com/v1';
