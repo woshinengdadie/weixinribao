@@ -5,90 +5,430 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>微信工作日报助手</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Microsoft YaHei',sans-serif;background:#f5f6f9}
+/* ================================================================
+   Design Token 体系 — 品牌蓝 + 中性灰 10 级色阶
+   ================================================================ */
+:root {
+  /* 品牌蓝色阶 */
+  --brand-50: #eff6ff;   --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;  --brand-500: #3b82f6;
+  --brand-600: #2563eb;  --brand-700: #1d4ed8;
+  --brand-800: #1e40af;  --brand-900: #1e3a8a;
 
-/* 整体容器: 撑满窗口 */
+  /* 中性灰色阶 */
+  --gray-50: #f9fafb;    --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;   --gray-300: #d1d5db;
+  --gray-400: #9ca3af;   --gray-500: #6b7280;
+  --gray-600: #4b5563;   --gray-700: #374151;
+  --gray-800: #1f2937;   --gray-900: #111827;
+
+  /* 语义色 */
+  --success: #10b981;    --success-light: #d1fae5;
+  --warning: #f59e0b;    --warning-light: #fef3c7;
+  --error: #ef4444;      --error-light: #fee2e2;
+  --info: var(--brand-500);
+
+  /* 语义映射 */
+  --bg-page: var(--gray-50);
+  --bg-surface: #ffffff;
+  --bg-subtle: #fafafa;
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-muted: var(--gray-400);
+  --border-default: var(--gray-200);
+  --border-light: #e8e8e8;
+
+  /* 排版 */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* 间距 (4px 基准) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+
+  /* 阴影 */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-focus: 0 0 0 3px rgba(59,130,246,0.15);
+  --shadow-error: 0 0 0 3px rgba(239,68,68,0.15);
+
+  /* 动画 */
+  --transition-fast: 150ms ease;
+}
+
+/* ================================================================
+   全局重置 & 排版
+   ================================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  height:100%;overflow:hidden;
+  font-family:"PingFang SC","Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg-page);
+  font-size:var(--text-sm);
+  line-height:var(--leading-normal);
+  color:var(--text-primary);
+}
+
+/* 无障碍 — 焦点环 */
+*:focus-visible{
+  outline:2px solid var(--brand-500);
+  outline-offset:2px;
+}
+
+/* 动态偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
+}
+
+/* ================================================================
+   布局
+   ================================================================ */
 .app{display:flex;flex-direction:column;height:100vh;width:100vw}
 
 /* 顶栏 */
-.titlebar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#fff;border-bottom:1px solid #e8e8e8;flex-shrink:0}
-.titlebar h1{font-size:15px;font-weight:600;color:#1a1a2e;letter-spacing:.5px}
+.titlebar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-2) var(--space-4);
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border-default);
+  flex-shrink:0;
+}
+.titlebar h1{
+  font-size:var(--text-lg);font-weight:var(--font-semibold);
+  color:var(--text-primary);letter-spacing:.3px;
+}
 
 /* 工具栏 */
-.toolbar{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff;border-bottom:1px solid #e8e8e8;flex-shrink:0;flex-wrap:wrap}
+.toolbar{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:var(--space-2) var(--space-4);
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border-default);
+  flex-shrink:0;flex-wrap:wrap;
+}
 .toolbar .spacer{flex:1}
 
 /* 中部: 侧栏 + 主内容 */
 .main-area{display:flex;flex:1;min-height:0}
 
 /* 侧栏 */
-.sidebar{width:170px;background:#fafafa;border-right:1px solid #e8e8e8;padding:6px 0;flex-shrink:0;overflow-y:auto}
-.sidebar-item{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;color:#666;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
-.sidebar-item:hover{background:#eee;color:#333}
-.sidebar-item.active{background:#e3f0ff;color:#1976d2;font-weight:600;border-left-color:#1976d2}
+.sidebar{
+  width:170px;background:var(--bg-subtle);
+  border-right:1px solid var(--border-default);
+  padding:var(--space-2) 0;flex-shrink:0;overflow-y:auto;
+}
+.sidebar-item{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:var(--space-2) var(--space-4);
+  font-size:var(--text-sm);color:var(--text-secondary);
+  cursor:pointer;transition:all var(--transition-fast);
+  border-left:3px solid transparent;
+}
+.sidebar-item:hover{background:var(--gray-100);color:var(--text-primary)}
+.sidebar-item.active{
+  background:var(--brand-50);color:var(--brand-600);
+  font-weight:var(--font-semibold);border-left-color:var(--brand-500);
+}
 .sidebar-item .icon{font-size:15px;width:22px;text-align:center}
 
 /* 主面板 */
-.main{flex:1;background:#fff;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.main{flex:1;background:var(--bg-surface);display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .tab-panel{flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden}
 .tab-panel.active{display:flex}
 
 /* 滚动容器 */
-.scroll-area{flex:1;overflow-y:auto;padding:18px 22px;min-height:0}
+.scroll-area{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-6);min-height:0}
 
-/* 仪表盘卡片 */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.stat-card{background:linear-gradient(135deg,#f8f9fb,#f0f2f6);border-radius:10px;padding:16px 18px;border:1px solid #e8e8e8}
-.stat-card .num{font-size:28px;font-weight:700;color:#1a1a2e;line-height:1.1}
-.stat-card .lbl{font-size:12px;color:#888;margin-top:3px}
+/* ================================================================
+   卡片组件
+   ================================================================ */
+.card{
+  background:var(--bg-surface);
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-xl);
+  padding:var(--space-4) var(--space-5);
+  box-shadow:var(--shadow-xs);
+}
+
+/* 仪表盘统计卡片 */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4)}
+.stat-card{
+  background:linear-gradient(135deg, var(--gray-50), var(--gray-100));
+  border-radius:var(--radius-xl);
+  padding:var(--space-4) var(--space-5);
+  border:1px solid var(--border-default);
+  transition:transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-card .num{font-size:var(--text-2xl);font-weight:var(--font-bold);color:var(--text-primary);line-height:1.1}
+.stat-card .lbl{font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-1)}
 
 /* 操作栏 */
-.action-bar{display:flex;align-items:center;gap:10px;padding:14px 18px;background:#f8f9fb;border-radius:10px;border:1px solid #e8e8e8;margin-bottom:18px;flex-wrap:wrap}
-.action-bar .sep{width:1px;height:24px;background:#ccc;margin:0 4px}
+.action-bar{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:var(--space-3) var(--space-4);
+  background:var(--gray-50);
+  border-radius:var(--radius-xl);
+  border:1px solid var(--border-default);
+  margin-bottom:var(--space-4);flex-wrap:wrap;
+}
+.action-bar .sep{width:1px;height:24px;background:var(--gray-300);margin:0 var(--space-1)}
 
-/* 日志区 */
+/* ================================================================
+   日志区
+   ================================================================ */
 .log-wrap{flex:1;display:flex;flex-direction:column;min-height:100px}
-.log-title{font-size:12px;color:#666;margin-bottom:8px;flex-shrink:0}
-.log-box{flex:1;background:#1e1e1e;border-radius:8px;padding:10px 14px;font-family:Consolas,'Courier New',monospace;font-size:11px;color:#d4d4d4;overflow-y:auto;line-height:1.7;white-space:pre-wrap;word-break:break-all;min-height:0}
+.log-title{
+  font-size:var(--text-xs);color:var(--text-secondary);
+  margin-bottom:var(--space-2);flex-shrink:0;
+}
+.log-box{
+  flex:1;background:#1a1a2e;border-radius:var(--radius-lg);
+  padding:var(--space-2) var(--space-3);
+  font-family:"Cascadia Code","Fira Code",Consolas,"Courier New",monospace;
+  font-size:11px;color:#e2e8f0;overflow-y:auto;
+  line-height:var(--leading-relaxed);
+  white-space:pre-wrap;word-break:break-all;min-height:0;
+}
 
-/* 表单 */
-.form-title{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #e8e8e8}
-.f-row{display:flex;align-items:center;margin-bottom:14px;gap:10px}
-.f-row label{width:85px;font-size:12px;color:#555;flex-shrink:0;text-align:right}
-.f-row input,.f-row select{flex:1;padding:7px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none}
-.f-row input:focus,.f-row select:focus{border-color:#1976d2;box-shadow:0 0 0 2px rgba(25,118,210,.12)}
-.f-row textarea{flex:1;padding:8px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;min-height:60px;resize:vertical;outline:none;font-family:inherit}
+/* ================================================================
+   表单控件
+   ================================================================ */
+.form-title{
+  font-size:var(--text-base);font-weight:var(--font-semibold);
+  color:var(--text-primary);
+  margin-bottom:var(--space-4);padding-bottom:var(--space-2);
+  border-bottom:1px solid var(--border-default);
+}
+.f-row{display:flex;align-items:center;margin-bottom:var(--space-3);gap:var(--space-2)}
+.f-row label{width:85px;font-size:var(--text-xs);color:var(--text-secondary);flex-shrink:0;text-align:right}
 
-/* 按钮 */
-.tbtn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:1px solid #d0d0d0;background:#fff;font-size:12px;color:#555;cursor:pointer;white-space:nowrap;transition:all .15s}
-.tbtn:hover{background:#f0f0f0}
-.tbtn.blue{background:#1976d2;color:#fff;border-color:#1976d2}
-.tbtn.blue:hover{background:#1565c0}
-.tbtn.green{background:#4CAF50;color:#fff;border-color:#4CAF50}
-.tbtn.green:hover{background:#388E3C}
-.tbtn.red{color:#e74c3c;border-color:#e74c3c}
-.save-btn{display:block;width:100%;padding:9px;border:none;border-radius:7px;background:#1976d2;color:#fff;font-size:13px;cursor:pointer;transition:background .15s}
-.save-btn:hover{background:#1565c0}
+/* 统一表单输入框样式 */
+.f-row input,.f-row select,.f-row textarea,
+.form-input,input[type="text"]:not(#chatSearch):not(#monChatSearch):not(#monRequirement),
+input[type="password"],input[type="number"],select{
+  padding:var(--space-2) var(--space-3);
+  font-size:var(--text-sm);
+  border:1px solid var(--gray-300);
+  border-radius:var(--radius-md);
+  background:var(--bg-surface);
+  color:var(--text-primary);
+  outline:none;
+  transition:all var(--transition-fast);
+  min-height:36px;
+}
+.f-row input:focus,.f-row select:focus,.f-row textarea:focus,
+.form-input:focus,input[type="text"]:focus,input[type="password"]:focus,
+input[type="number"]:focus,select:focus{
+  border-color:var(--brand-500);
+  box-shadow:var(--shadow-focus);
+}
+.f-row input:disabled,.f-row select:disabled,input:disabled,select:disabled{
+  background:var(--gray-100);color:var(--text-muted);cursor:not-allowed;
+}
 
-/* 提示卡片 */
-.hint-box{font-size:12px;color:#666;padding:10px 14px;background:#f8f9fb;border-radius:7px;border:1px solid #e8e8e8;line-height:1.6;margin-bottom:14px}
-.hint-box.key-ok{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
-.hint-box.warn{background:#fffbe6;border-color:#ffe58f}
+/* 搜索框 & 小输入框保持精简尺寸 */
+#chatSearch,#monChatSearch,#monRequirement,
+.time-input input[type="date"],.time-input input[type="time"]{
+  padding:var(--space-1) var(--space-2);
+  font-size:var(--text-xs);
+  min-height:auto;
+  border:1px solid var(--gray-300);
+  border-radius:var(--radius-sm);
+  outline:none;
+}
+#chatSearch:focus,#monChatSearch:focus,#monRequirement:focus,
+.time-input input:focus{border-color:var(--brand-500);box-shadow:var(--shadow-focus)}
 
-/* 状态栏 */
-.status-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 16px;background:#fafafa;border-top:1px solid #e8e8e8;font-size:11px;color:#888;flex-shrink:0}
-.status-bar .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4CAF50;margin-right:5px}
+.f-row textarea{
+  min-height:60px;resize:vertical;
+  font-family:inherit;
+  line-height:var(--leading-relaxed);
+}
 
-/* 时间选择器样式 */
-.time-input{display:flex;align-items:center;gap:4px;font-size:12px;color:#555}
-.time-input input[type="date"],.time-input input[type="time"]{padding:4px 6px;border:1px solid #d0d0d0;border-radius:4px;font-size:12px;outline:none}
-.time-input input:focus{border-color:#1976d2}
+/* ================================================================
+   按钮体系 (三级: primary / secondary / ghost)
+   ================================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:var(--space-1);
+  font-size:var(--text-sm);font-weight:var(--font-medium);
+  border-radius:var(--radius-md);cursor:pointer;
+  white-space:nowrap;user-select:none;
+  transition:all var(--transition-fast);
+  border:1px solid transparent;
+}
+.btn:focus-visible{
+  outline:2px solid var(--brand-500);
+  outline-offset:2px;
+}
+.btn:disabled{
+  opacity:0.45;cursor:not-allowed;pointer-events:none;
+}
 
-/* Toast */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#4CAF50;color:#fff;padding:10px 24px;border-radius:6px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+/* 主要操作 */
+.btn--primary{
+  background:var(--brand-500);color:#fff;
+  border-color:var(--brand-500);
+  box-shadow:0 1px 2px rgba(59,130,246,0.15);
+}
+.btn--primary:hover:not(:disabled){
+  background:var(--brand-600);border-color:var(--brand-600);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(59,130,246,0.3);
+}
+.btn--primary:active:not(:disabled){
+  transform:translateY(0);
+  box-shadow:0 1px 2px rgba(59,130,246,0.15);
+}
+
+/* 次要操作 */
+.btn--secondary{
+  background:var(--bg-surface);color:var(--text-primary);
+  border-color:var(--gray-300);
+}
+.btn--secondary:hover:not(:disabled){
+  background:var(--gray-50);border-color:var(--gray-400);
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-sm);
+}
+.btn--secondary:active:not(:disabled){
+  transform:translateY(0);
+  box-shadow:none;
+}
+
+/* 幽灵按钮 (取消/关闭/危险) */
+.btn--ghost{
+  background:transparent;color:var(--text-secondary);
+  border-color:transparent;
+}
+.btn--ghost:hover:not(:disabled){
+  background:var(--gray-100);color:var(--text-primary);
+}
+.btn--ghost.btn--danger{
+  color:var(--error);
+  border-color:var(--error);
+}
+.btn--ghost.btn--danger:hover:not(:disabled){
+  background:var(--error-light);
+}
+
+/* 尺寸变体 */
+.btn--sm{padding:3px 10px;font-size:var(--text-xs);border-radius:var(--radius-sm)}
+.btn--md{padding:6px 16px;font-size:var(--text-sm)}
+.btn--lg{padding:var(--space-2) var(--space-5);font-size:var(--text-base)}
+
+/* 全宽保存按钮 */
+.btn--full{width:100%;justify-content:center;padding:var(--space-2) var(--space-4)}
+
+/* 兼容旧 save-btn（逐步迁移后删除） */
+.save-btn{
+  display:flex;align-items:center;justify-content:center;gap:var(--space-1);
+  width:100%;padding:var(--space-2) var(--space-4);
+  border:none;border-radius:var(--radius-md);
+  background:var(--brand-500);color:#fff;
+  font-size:var(--text-sm);font-weight:var(--font-medium);
+  cursor:pointer;
+  transition:all var(--transition-fast);
+  box-shadow:0 1px 2px rgba(59,130,246,0.15);
+}
+.save-btn:hover{
+  background:var(--brand-600);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(59,130,246,0.3);
+}
+.save-btn:active{transform:translateY(0)}
+
+/* ================================================================
+   提示卡片
+   ================================================================ */
+.hint-box{
+  font-size:var(--text-xs);color:var(--text-secondary);
+  padding:var(--space-2) var(--space-3);
+  background:var(--gray-50);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border-default);
+  line-height:var(--leading-relaxed);
+  margin-bottom:var(--space-3);
+}
+.hint-box.key-ok{
+  background:var(--success-light);border-color:#a5d6a7;color:#166534;
+}
+.hint-box.warn{
+  background:var(--warning-light);border-color:#ffe58f;
+}
+
+/* ================================================================
+   状态栏
+   ================================================================ */
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-1) var(--space-4);
+  background:var(--bg-subtle);
+  border-top:1px solid var(--border-default);
+  font-size:11px;color:var(--text-muted);flex-shrink:0;
+}
+.status-bar .dot{
+  display:inline-block;width:7px;height:7px;
+  border-radius:50%;background:var(--success);
+  margin-right:5px;
+}
+
+/* ================================================================
+   时间选择器
+   ================================================================ */
+.time-input{
+  display:flex;align-items:center;gap:var(--space-1);
+  font-size:var(--text-xs);color:var(--text-secondary);
+}
+.time-input input[type="date"],.time-input input[type="time"]{
+  padding:var(--space-1) var(--space-2);
+  border:1px solid var(--gray-300);
+  border-radius:var(--radius-sm);
+  font-size:var(--text-xs);outline:none;
+}
+.time-input input:focus{border-color:var(--brand-500);box-shadow:var(--shadow-focus)}
+
+/* ================================================================
+   Toast 通知
+   ================================================================ */
+.toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  background:var(--success);color:#fff;
+  padding:var(--space-2) var(--space-5);
+  border-radius:var(--radius-md);
+  font-size:var(--text-sm);z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+  box-shadow:var(--shadow-md);
+}
 .toast.show{opacity:1}
-.toast.err{background:#f44336}
+.toast.err{background:var(--error)}
 </style>
 </head>
 <body>
@@ -103,14 +443,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 
   <!-- 工具栏 -->
   <div class="toolbar">
-    <button class="tbtn" onclick="openLatest('folder')">📂 打开文件夹</button>
-    <button class="tbtn" onclick="openLatest('summary')">📄 工作总结</button>
-    <button class="tbtn" onclick="openLatest('detail')">📋 对话详情</button>
-    <button class="tbtn" onclick="openLatest('todos')">📝 待办事项</button>
-    <button class="tbtn" onclick="openLatest('weekly-res')">📊 工作周报</button>
+    <button class="btn btn--secondary btn--md" onclick="openLatest('folder')">📂 打开文件夹</button>
+    <button class="btn btn--secondary btn--md" onclick="openLatest('summary')">📄 工作总结</button>
+    <button class="btn btn--secondary btn--md" onclick="openLatest('detail')">📋 对话详情</button>
+    <button class="btn btn--secondary btn--md" onclick="openLatest('todos')">📝 待办事项</button>
+    <button class="btn btn--secondary btn--md" onclick="openLatest('weekly-res')">📊 工作周报</button>
     <span class="spacer"></span>
-    <button class="tbtn" onclick="openOutputRoot()">📁 历史文档</button>
-    <button class="tbtn red" onclick="quitApp()">🚪 退出</button>
+    <button class="btn btn--secondary btn--md" onclick="openOutputRoot()">📁 历史文档</button>
+    <button class="btn btn--ghost btn--md btn--danger" onclick="quitApp()">🚪 退出</button>
   </div>
 
   <!-- 中部: 侧栏 + 主区域 -->
@@ -134,7 +474,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
         <div class="scroll-area" style="display:flex;flex-direction:column">
           <!-- 操作栏 -->
           <div class="action-bar">
-            <button class="tbtn green" id="manualRunBtn" onclick="manualRun()">▶ 手动运行</button>
+            <button class="btn btn--primary btn--md" id="manualRunBtn" onclick="manualRun()">▶ 手动运行</button>
             <div class="time-input">
               <span>从</span>
               <input type="date" id="manualDate">
@@ -142,14 +482,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
               <span style="color:#888">→ 现在</span>
             </div>
             <div class="sep"></div>
-            <button class="tbtn" id="autoBtn" onclick="toggleAuto()" style="min-width:110px">⏸ 自动运行</button>
+            <button class="btn btn--secondary btn--md" id="autoBtn" onclick="toggleAuto()" style="min-width:110px">⏸ 自动运行</button>
             <span id="autoStatus" style="font-size:12px;color:#888;white-space:nowrap"><span class="dot"></span>已停止</span>
             <div class="sep"></div>
-            <button class="tbtn green" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
+            <button class="btn btn--primary btn--md" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
             <div class="sep"></div>
-            <button class="tbtn" onclick="testKeys()">🔍 测试密钥</button>
+            <button class="btn btn--secondary btn--md" onclick="testKeys()">🔍 测试密钥</button>
             <div class="sep"></div>
-            <button class="tbtn red" onclick="clearOldTodos()">🗑 清理旧待办</button>
+            <button class="btn btn--ghost btn--md btn--danger" onclick="clearOldTodos()">🗑 清理旧待办</button>
           </div>
 
           <!-- 统计卡片 -->
@@ -173,14 +513,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
         <div class="scroll-area">
           <div class="form-title">基本设置</div>
           <div class="f-row"><label>微信昵称</label><input type="text" id="cfgMyName" placeholder="你的微信昵称（必填）"></div>
-          <div class="f-row"><label>微信ID</label><input type="text" id="cfgWxid" placeholder="wxid_xxxx（可选，填数据库目录后可自动识别）"><button class="tbtn" onclick="detectWxid()">识别ID</button></div>
+          <div class="f-row"><label>微信ID</label><input type="text" id="cfgWxid" placeholder="wxid_xxxx（可选，填数据库目录后可自动识别）"><button class="btn btn--secondary btn--md" onclick="detectWxid()">识别ID</button></div>
           <div class="f-row"><label>API Key</label><input type="password" id="cfgApiKey" placeholder="输入 API Key"></div>
           <div class="f-row"><label>Base URL</label><input type="text" id="cfgBaseUrl" placeholder="https://token-plan-cn.xiaomimimo.com/v1"></div>
           <div class="f-row"><label>模型</label><input type="text" id="cfgModel" placeholder="mimo-v2.5-pro"></div>
           <div class="f-row"><label>Temperature</label><input type="number" id="cfgTemperature" placeholder="0.5" step="0.1" min="0" max="2" style="max-width:120px"><label style="width:auto;font-size:11px;color:#888">0~2，越低越保守</label></div>
           <div class="f-row"><label>Max Tokens</label><input type="number" id="cfgMaxTokens" placeholder="16000" step="1000" min="100" style="max-width:130px"></div>
-          <div class="f-row"><label>数据库目录</label><input type="text" id="cfgDbDir" placeholder="自动检测，一般无需填写"><button class="tbtn" onclick="browseDbDir()">浏览</button></div>
-          <div class="f-row"><label>输出位置</label><input type="text" id="cfgOutputDir" placeholder="./output"><button class="tbtn" onclick="browseOutputDir()">浏览</button></div>
+          <div class="f-row"><label>数据库目录</label><input type="text" id="cfgDbDir" placeholder="自动检测，一般无需填写"><button class="btn btn--secondary btn--md" onclick="browseDbDir()">浏览</button></div>
+          <div class="f-row"><label>输出位置</label><input type="text" id="cfgOutputDir" placeholder="./output"><button class="btn btn--secondary btn--md" onclick="browseOutputDir()">浏览</button></div>
           <div class="f-row"><label>输出格式</label><select id="cfgOutputFormat"><option value="md">Markdown (.md)</option><option value="txt">纯文本 (.txt)</option></select><label style="width:auto;font-size:11px;color:#888;padding-top:5px">适用于日报、周报、会话分析。待办HTML不变。</label></div>
           <div class="f-row"><label>AI 总结</label><label style="width:auto;font-size:13px;padding-top:7px"><input type="checkbox" id="cfgLlmSummary" checked> 开启 AI 智能总结（关闭后仅整理对话详情）</label></div>
           <div class="f-row"><label>本地模型</label><label style="width:auto;font-size:13px;padding-top:7px"><input type="checkbox" id="cfgLocalLlm" onclick="toggleLocalModel()"> 使用本地小模型（无需 API Key，首次需下载~380MB）</label></div>
@@ -200,13 +540,13 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
           <div id="keyInputArea">
             <div class="f-row"><label>Passphrase</label><input type="text" id="cfgPassphrase" placeholder="wx_key 获取的十六进制密钥"></div>
             <div style="display:flex;gap:8px;margin-bottom:12px;margin-left:95px">
-              <button class="tbtn green" onclick="manualKeyConfig()">🔑 配置密钥</button>
+              <button class="btn btn--primary btn--md" onclick="manualKeyConfig()">🔑 配置密钥</button>
               <span id="keyConfigStatus" style="font-size:12px;color:#888;padding-top:6px"></span>
             </div>
           </div>
           <div id="keyOkArea" style="display:none">
             <div class="hint-box key-ok">✅ 密钥已配置（<span id="keyOkCount">0</span> 个数据库通过验证）</div>
-            <button class="tbtn" onclick="showKeyReconfig()" style="margin-left:95px">🔄 重新配置</button>
+            <button class="btn btn--secondary btn--md" onclick="showKeyReconfig()" style="margin-left:95px">🔄 重新配置</button>
           </div>
         </div>
       </div>
@@ -230,7 +570,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
           <div class="f-row">
             <label>选择周次</label>
             <select id="weekSelect"><option value="">本周</option><option value="7daysago">上周</option><option value="14daysago">前一周</option></select>
-            <button class="tbtn green" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
+            <button class="btn btn--primary btn--md" onclick="generateWeeklyWithSelect()">📊 生成周报</button>
           </div>
           <div class="f-row">
             <label>自动生成</label>
@@ -251,7 +591,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
                 <span style="font-size:12px;color:#555;font-weight:500;white-space:nowrap">会话列表</span>
-                <button class="tbtn" onclick="loadChatList()" style="font-size:11px;padding:3px 10px;white-space:nowrap">📋 加载</button>
+                <button class="btn btn--secondary btn--sm" onclick="loadChatList()">📋 加载</button>
               </div>
               <input type="text" id="chatSearch" placeholder="搜索会话..." style="width:100%;padding:5px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none;margin-bottom:6px" oninput="filterChatList()">
               <div style="border:1px solid #d0d0d0;border-radius:6px;max-height:260px;overflow-y:auto;padding:4px 0" id="chatSelectList">
@@ -277,7 +617,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
               <button class="save-btn" id="chatAnalyzeBtn" onclick="startChatAnalyze()" style="margin-top:8px">🔍 开始分析</button>
               <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
                 <span id="chatAnalyzeStatus" style="font-size:11px;color:#888"></span>
-                <button class="tbtn" id="chatAnalyzeOpenBtn" onclick="openChatAnalyzeReport()" style="display:none;font-size:11px;padding:3px 10px">📄 打开最新报告</button>
+                <button class="btn btn--secondary btn--sm" id="chatAnalyzeOpenBtn" onclick="openChatAnalyzeReport()" style="display:none">📄 打开最新报告</button>
               </div>
             </div>
           </div>
@@ -301,7 +641,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
               <div style="flex:1;min-width:0">
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
                   <span style="font-size:12px;color:#555;font-weight:500;white-space:nowrap">群聊列表</span>
-                  <button class="tbtn" onclick="loadMonitorChatList()" style="font-size:11px;padding:3px 10px;white-space:nowrap">📋 加载</button>
+                  <button class="btn btn--secondary btn--sm" onclick="loadMonitorChatList()">📋 加载</button>
                 </div>
                 <input type="text" id="monChatSearch" placeholder="搜索群聊..." style="width:100%;padding:5px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none;margin-bottom:6px" oninput="filterMonitorChatList()">
                 <div style="border:1px solid #d0d0d0;border-radius:6px;max-height:200px;overflow-y:auto;padding:4px 0" id="monChatSelectList">
@@ -332,8 +672,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
             </div>
             <div style="display:flex;gap:8px;margin:12px 0 0 120px">
               <button class="save-btn" style="padding:6px 16px" onclick="saveMonitorConfig()">💾 保存</button>
-              <button class="tbtn" id="monToggleBtn" onclick="toggleMonitor()">▶ 启动监控</button>
-              <button class="tbtn" onclick="runMonitorNow()">⚡ 立即运行</button>
+              <button class="btn btn--secondary btn--md" id="monToggleBtn" onclick="toggleMonitor()">▶ 启动监控</button>
+              <button class="btn btn--secondary btn--md" onclick="runMonitorNow()">⚡ 立即运行</button>
             </div>
             <div id="monStatus" style="margin:8px 0 0 120px;font-size:12px;color:#888">状态：未运行</div>
           </div>
@@ -342,7 +682,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
             <div class="form-title" style="font-size:14px">消息文件 & AI 分析</div>
             <div class="hint-box">点击「选择文件」在资源管理器中多选 .md 文件 → 填写分析要求 → 点击「发送分析」</div>
             <div style="display:flex;gap:8px;align-items:center;margin:8px 0">
-              <button class="tbtn" onclick="pickMonitorFiles()">📂 选择文件</button>
+              <button class="btn btn--secondary btn--md" onclick="pickMonitorFiles()">📂 选择文件</button>
               <span id="monFileCount" style="font-size:12px;color:#888">未选择文件</span>
               <input type="text" id="monRequirement" placeholder="分析要求（如：总结测试问题进展和责任人）" style="flex:1;border:1px solid #d0d0d0;border-radius:7px;padding:6px 10px;font-size:12px;outline:none">
               <button class="save-btn" style="padding:6px 16px" onclick="analyzeMonitorFiles()">🔍 发送分析</button>
@@ -358,8 +698,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
           <div class="hint-box">用自然语言描述你希望 AI 如何分析你的聊天记录。例如：关注哪类话题、用什么格式输出等。</div>
           <textarea class="f-row" id="cfgRulePrompt" spellcheck="false" style="width:100%;min-height:200px;font-family:Consolas,monospace;border:1px solid #d0d0d0;border-radius:7px;padding:10px;resize:vertical;outline:none;font-size:12px;line-height:1.7"></textarea>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-            <button class="tbtn" onclick="resetRules()">↩ 恢复默认</button>
-            <button class="tbtn green" onclick="saveRules()">💾 保存规则</button>
+            <button class="btn btn--secondary btn--md" onclick="resetRules()">↩ 恢复默认</button>
+            <button class="btn btn--primary btn--md" onclick="saveRules()">💾 保存规则</button>
           </div>
         </div>
       </div>
@@ -639,10 +979,10 @@ function updateManualBtn(running) {
   var btn = document.getElementById('manualRunBtn');
   if (running) {
     btn.textContent = '⏹ 停止运行';
-    btn.className = 'tbtn red';
+    btn.className = 'btn btn--ghost btn--md btn--danger';
   } else {
     btn.textContent = '▶ 手动运行';
-    btn.className = 'tbtn green';
+    btn.className = 'btn btn--primary btn--md';
   }
 }
 
@@ -671,10 +1011,12 @@ function updateAutoUI() {
   const btn = document.getElementById('autoBtn');
   const status = document.getElementById('autoStatus');
   if (autoRunning) {
-    btn.textContent = '⏹ 停止运行'; btn.style.borderColor = '#f44336'; btn.style.color = '#f44336';
-    status.innerHTML = '<span class="dot" style="background:#4CAF50"></span>运行中';
+    btn.textContent = '⏹ 停止运行';
+    btn.className = 'btn btn--ghost btn--md btn--danger';
+    status.innerHTML = '<span class="dot"></span>运行中';
   } else {
-    btn.textContent = '⏸ 自动运行'; btn.style.borderColor = '#d0d0d0'; btn.style.color = '#555';
+    btn.textContent = '⏸ 自动运行';
+    btn.className = 'btn btn--secondary btn--md';
     status.innerHTML = '<span class="dot"></span>已停止';
   }
 }
@@ -1127,10 +1469,10 @@ function updateAnalyzeBtn(running) {
   var btn = document.getElementById('chatAnalyzeBtn');
   if (running) {
     btn.textContent = '⏹ 停止分析';
-    btn.style.background = '#e74c3c';
+    btn.className = 'btn btn--ghost btn--md btn--danger btn--full';
   } else {
     btn.textContent = '🔍 开始分析';
-    btn.style.background = '';
+    btn.className = 'save-btn';
   }
 }
 

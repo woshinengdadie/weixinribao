@@ -65,8 +65,9 @@ def _show_info(title: str, message: str):
     try:
         import tkinter.messagebox as msgbox
         msgbox.showinfo(title, message)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"弹窗失败（可能是无头环境），降级到控制台: {e}")
+        print(f"[{title}] {message}")
 
 
 def _show_error(title: str, message: str):
@@ -74,8 +75,9 @@ def _show_error(title: str, message: str):
     try:
         import tkinter.messagebox as msgbox
         msgbox.showerror(title, message)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"错误弹窗失败（可能是无头环境），降级到控制台: {e}")
+        print(f"[{title}] {message}")
 
 
 def _find_wechat_db_dirs() -> list:
@@ -345,6 +347,7 @@ class JsApi:
     """JavaScript 可调用的 PyWebView 原生 API"""
 
     def pick_folder(self):
+        root = None
         try:
             import tkinter as tk
             from tkinter import filedialog
@@ -352,11 +355,16 @@ class JsApi:
             root.withdraw()
             root.attributes("-topmost", True)
             folder = filedialog.askdirectory(title="选择文件夹")
-            root.destroy()
             return folder or ""
         except Exception as e:
             logger.error(f"文件夹选择失败: {e}")
             return ""
+        finally:
+            if root:
+                try:
+                    root.destroy()
+                except Exception:
+                    pass
 
 
 def start_flask():

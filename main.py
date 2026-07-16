@@ -69,6 +69,38 @@ def load_config(config_path: str | None = None) -> dict[str, Any]:
     return config
 
 
+def validate_config(config: dict[str, Any]) -> None:
+    """启动时验证关键配置字段，提前给出清晰错误提示"""
+    errors: list[str] = []
+
+    # 微信配置检查
+    wechat: dict[str, Any] = config.get("wechat", {})
+    db_dir: str = str(wechat.get("db_dir", ""))
+    if not db_dir:
+        errors.append("缺少 wechat.db_dir 配置，请指定微信数据库路径")
+    elif not os.path.exists(db_dir):
+        errors.append(f"微信数据库路径不存在: {db_dir}")
+
+    my_name: str = str(wechat.get("my_name", ""))
+    if not my_name:
+        errors.append("缺少 wechat.my_name 配置，请设置你的微信昵称")
+
+    # LLM 配置检查
+    llm_summary: bool = bool(config.get("report", {}).get("llm_summary_enabled", False))
+    local_llm_enabled: bool = bool(config.get("local_llm", {}).get("enabled", False))
+    if llm_summary and not local_llm_enabled:
+        llm_config: dict[str, Any] = config.get("llm", {})
+        api_key: str = str(llm_config.get("api_key", ""))
+        if not api_key:
+            errors.append("LLM 摘要已启用但未配置 llm.api_key，请设置 API 密钥")
+
+    if errors:
+        for err in errors:
+            logger.error(f"配置验证失败: {err}")
+            print(f"[配置错误] {err}")
+        raise SystemExit(1)
+
+
 def setup_logging(config: dict[str, Any]) -> None:
     """配置日志"""
     log_config: dict[str, Any] = cast(dict[str, Any], config.get("logging", {}))
@@ -275,6 +307,7 @@ def main() -> None:
 
     config_path: str | None = cast(str | None, args.config)
     config: dict[str, Any] = load_config(config_path)
+    validate_config(config)
     setup_logging(config)
 
     # ---- 在线激活检查 ----
