@@ -2,7 +2,7 @@
 ; 不依赖外部语言文件，全部中文内嵌
 
 #define MyAppName "微信工作日报助手"
-#define MyAppVersion "2.0.1.18"
+#define MyAppVersion "2.1.0.0"
 #define MyAppPublisher "WeChatWorkAgent"
 #define MyAppExeName "WeChatWorkAgent.exe"
 
