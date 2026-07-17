@@ -1356,16 +1356,7 @@ def api_update_check():
         try: return tuple(int(x) for x in v.strip().split("."))
         except: return (0,)
 
-    local_ver_str = "unknown"
-    try:
-        vfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "VERSION")
-        if getattr(sys, "frozen", False):
-            vfile = os.path.join(os.path.dirname(sys.executable), "VERSION")
-        if os.path.exists(vfile):
-            with open(vfile, encoding="utf-8") as f:
-                local_ver_str = f.read().strip()
-    except Exception:
-        pass
+    local_ver_str = _read_version()
 
     has_update = _parse(remote_ver) > _parse(local_ver_str)
     return jsonify({
@@ -1379,17 +1370,31 @@ def api_update_check():
     })
 
 
+def _read_version() -> str:
+    """从多位置查找 VERSION 文件，兼容 dev / PyInstaller 打包环境"""
+    candidates = [
+        # 1) PyInstaller 打包：_MEIPASS 指向 _internal/ 目录
+        os.path.join(getattr(sys, "_MEIPASS", ""), "VERSION"),
+        # 2) 打包后同 exe 目录（COLLECT 模式可能在此）
+        os.path.join(os.path.dirname(sys.executable), "VERSION") if getattr(sys, "frozen", False) else "",
+        # 3) 源码模式：项目根
+        os.path.join(PROJECT_ROOT, "VERSION"),
+        # 4) 兜底：从本文件向上 1 级
+        os.path.join(os.path.dirname(__file__), "..", "VERSION"),
+    ]
+    for vfile in candidates:
+        if vfile and os.path.exists(vfile):
+            try:
+                return open(vfile, encoding="utf-8").read().strip()
+            except Exception:
+                continue
+    return "unknown"
+
+
 @app.route("/api/version", methods=["GET"])
 def api_version():
     """返回当前程序版本号（用于顶栏显示）"""
-    try:
-        vfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "VERSION")
-        if getattr(sys, "frozen", False):
-            vfile = os.path.join(os.path.dirname(sys.executable), "VERSION")
-        ver = open(vfile, encoding="utf-8").read().strip() if os.path.exists(vfile) else "unknown"
-    except Exception:
-        ver = "unknown"
-    return jsonify({"success": True, "version": ver})
+    return jsonify({"success": True, "version": _read_version()})
 
 
 @app.route("/api/weekly/list", methods=["GET"])
@@ -1437,16 +1442,24 @@ def api_file_open():
         # 默认打开 output 目录
         path = _get_output_dir()
 
-    # 转换为绝对路径
+    # URL：用浏览器打开（用于打开下载页、文档链接等）
+    if path.startswith(("http://", "https://")):
+        try:
+            import webbrowser
+            webbrowser.open(path)
+            return jsonify({"success": True, "type": "url"})
+        except Exception as e:
+            return jsonify({"success": False, "message": f"打开URL失败: {e}"})
+
+    # 本地路径：转换为绝对路径并启动
     if not os.path.isabs(path):
         path = os.path.join(PROJECT_ROOT, path)
 
     try:
-        if os.path.isfile(path):
+        if os.path.exists(path):
             os.startfile(path)
-        elif os.path.isdir(path):
-            os.startfile(path)
-        return jsonify({"success": True})
+            return jsonify({"success": True, "type": "local"})
+        return jsonify({"success": False, "message": f"路径不存在: {path}"})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
