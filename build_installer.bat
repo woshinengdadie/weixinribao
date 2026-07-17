@@ -4,6 +4,41 @@ title 微信工作日报助手 - 生成安装包
 
 cd /d "%~dp0"
 
+::: 检查 Python（多路径查找）
+set "PYTHON="
+python --version >nul 2>&1
+if %errorlevel% equ 0 set "PYTHON=python"
+if "%PYTHON%"=="" (
+    py -3 --version >nul 2>&1
+    if %errorlevel% equ 0 set "PYTHON=py -3"
+)
+if "%PYTHON%"=="" (
+    if exist "venv\Scripts\python.exe" (
+        venv\Scripts\python.exe --version >nul 2>&1
+        if %errorlevel% equ 0 set "PYTHON=venv\Scripts\python.exe"
+    )
+)
+if "%PYTHON%"=="" (
+    for %%p in (
+        "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python314\python.exe"
+        "C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python313\python.exe"
+        "C:\Program Files\Python314\python.exe"
+        "C:\Python314\python.exe"
+    ) do (
+        if exist %%~p (
+            set "PYTHON=%%~p"
+            goto :found_python
+        )
+    )
+)
+:found_python
+if "%PYTHON%"=="" (
+    echo [错误] 未找到 Python 3
+    pause
+    exit /b 1
+)
+echo [OK] Python 已就绪: %PYTHON%
+
 echo ============================================
 echo   微信工作日报助手 - 生成安装包
 echo ============================================
