@@ -1379,6 +1379,19 @@ def api_update_check():
     })
 
 
+@app.route("/api/version", methods=["GET"])
+def api_version():
+    """返回当前程序版本号（用于顶栏显示）"""
+    try:
+        vfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), "VERSION")
+        if getattr(sys, "frozen", False):
+            vfile = os.path.join(os.path.dirname(sys.executable), "VERSION")
+        ver = open(vfile, encoding="utf-8").read().strip() if os.path.exists(vfile) else "unknown"
+    except Exception:
+        ver = "unknown"
+    return jsonify({"success": True, "version": ver})
+
+
 @app.route("/api/weekly/list", methods=["GET"])
 def api_weekly_list():
     reports = _get_weekly_reports()

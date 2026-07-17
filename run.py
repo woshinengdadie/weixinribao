@@ -346,6 +346,36 @@ def _wait_for_flask(url: str = "http://127.0.0.1:5566", timeout: int = 15) -> bo
 class JsApi:
     """JavaScript 可调用的 PyWebView 原生 API"""
 
+    def __init__(self):
+        self._window = None  # 由 set_window() 注入 webview.Window 实例
+
+    def set_window(self, window) -> None:
+        """注入 webview 窗口引用，供窗口控制方法使用"""
+        self._window = window
+
+    def minimize_window(self):
+        try:
+            if self._window:
+                self._window.minimize()
+        except Exception as e:
+            logger.error(f"最小化窗口失败: {e}")
+
+    def toggle_maximize(self):
+        """切换最大化状态：frameless 模式下没有 maximize 按钮，用 toggle_fullscreen 替代"""
+        try:
+            if self._window:
+                # pywebview frameless 没有原生 maximize，用 fullscreen 切换
+                self._window.toggle_fullscreen()
+        except Exception as e:
+            logger.error(f"切换最大化失败: {e}")
+
+    def close_window(self):
+        try:
+            if self._window:
+                self._window.destroy()
+        except Exception as e:
+            logger.error(f"关闭窗口失败: {e}")
+
     def pick_folder(self):
         root = None
         try:
@@ -578,6 +608,7 @@ def main():
         logger.info(f"启动 PyWebView 桌面窗口（{title}）...")
         # 加时间戳防止缓存
         url = f"http://127.0.0.1:5566?_t={int(time.time())}"
+        js_api = JsApi()
         window = webview.create_window(
             title=title,
             url=url,
@@ -585,8 +616,11 @@ def main():
             height=720,
             min_size=(800, 550),
             resizable=True,
-            js_api=JsApi(),
+            frameless=True,           # 隐藏原生标题栏，使用 HTML 自定义标题栏
+            easy_drag=True,           # 让 -webkit-app-region: drag 生效（用户可拖拽自定义标题栏）
+            js_api=js_api,
         )
+        js_api.set_window(window)    # 注入窗口引用，供最小化/最大化使用
         webview.start(debug=False, http_server=False, gui="edgechromium")
     except ImportError:
         _start_browser_fallback()

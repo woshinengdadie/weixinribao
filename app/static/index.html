@@ -111,27 +111,57 @@ html,body{
    ================================================================ */
 .app{display:flex;flex-direction:column;height:100vh;width:100vw}
 
-/* 顶栏 — 品牌渐变 */
+/* 顶栏 — 品牌渐变 + 自定义窗口控制 */
 .titlebar{
   display:flex;align-items:center;justify-content:space-between;
-  padding:var(--space-2) var(--space-5);
+  padding:0 var(--space-5) 0 0;
   background:linear-gradient(135deg, var(--brand-600) 0%, var(--brand-700) 60%, var(--brand-800) 100%);
-  flex-shrink:0;min-height:44px;
+  flex-shrink:0;min-height:40px;
 }
-.titlebar h1{
-  font-size:var(--text-base);font-weight:var(--font-semibold);
-  color:#fff;letter-spacing:.3px;
+/* 拖拽区：仅品牌点 + 程序名可拖 */
+.titlebar .drag-region{
+  flex:1;height:100%;min-height:40px;
   display:flex;align-items:center;gap:var(--space-2);
+  padding-left:var(--space-5);
+  -webkit-app-region:drag;
+  user-select:none;
+  cursor:default;
 }
-.titlebar .brand-dot{
+.titlebar .drag-region .brand-dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--success);
   box-shadow:0 0 6px rgba(16,185,129,0.6);
   flex-shrink:0;
 }
+.titlebar .drag-region .app-name{
+  font-size:var(--text-base);font-weight:var(--font-semibold);
+  color:#fff;letter-spacing:.3px;
+  white-space:nowrap;
+}
+.titlebar .drag-region .ver-tag{
+  font-size:10px;color:rgba(255,255,255,0.6);
+  background:rgba(255,255,255,0.12);padding:2px 7px;
+  border-radius:8px;margin-left:4px;
+}
 .titlebar .tbar-actions{
   display:flex;align-items:center;gap:var(--space-1);
+  -webkit-app-region:no-drag;  /* 按钮区不参与拖拽 */
 }
+/* 窗口控制按钮（最右侧三按钮） */
+.win-ctrl{
+  display:flex;align-items:center;
+  margin-left:var(--space-2);
+  -webkit-app-region:no-drag;
+}
+.win-btn{
+  width:36px;height:40px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;cursor:pointer;
+  color:rgba(255,255,255,0.85);
+  transition:background var(--transition-fast), color var(--transition-fast);
+  font-size:13px;line-height:1;
+}
+.win-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.win-btn.win-btn-close:hover{background:#e81123;color:#fff}
 
 /* 工具栏 — 合并到标题栏下方，仅做快捷操作栏 */
 .toolbar{
@@ -577,9 +607,13 @@ input[type="number"]:focus,select:focus{
 </head>
 <body>
 <div class="app">
-  <!-- 顶栏 -->
+  <!-- 顶栏 — 拖拽区 + 操作区 + 窗口控制 -->
   <div class="titlebar">
-    <h1><span class="brand-dot"></span> 微信工作日报助手</h1>
+    <div class="drag-region" id="dragRegion">
+      <span class="brand-dot"></span>
+      <span class="app-name">微信工作日报助手</span>
+      <span class="ver-tag" id="titlebarVer">v--</span>
+    </div>
     <div class="tbar-actions">
       <div class="dropdown" id="quickMenu">
         <button class="btn btn--primary btn--sm" onclick="toggleDropdown(event,'quickMenu')" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:#fff">📋 快速操作 ▾</button>
@@ -593,7 +627,11 @@ input[type="number"]:focus,select:focus{
           <button class="dropdown-item" onclick="openOutputRoot()"><span class="icon">📁</span> 历史文档</button>
         </div>
       </div>
-      <button class="btn btn--ghost btn--md btn--danger" onclick="quitApp()" style="color:rgba(255,255,255,0.85);border-color:rgba(255,255,255,0.3)">🚪 退出</button>
+      <div class="win-ctrl">
+        <button class="win-btn" onclick="winMin()" title="最小化">─</button>
+        <button class="win-btn" onclick="winMax()" title="最大化">▢</button>
+        <button class="win-btn win-btn-close" onclick="winClose()" title="关闭">✕</button>
+      </div>
     </div>
   </div>
 
@@ -971,6 +1009,20 @@ input[type="number"]:focus,select:focus{
   // 禁止控制台输出
   try { console.log = console.warn = console.error = console.info = function(){}; } catch(e){}
 })();
+
+// ====================== 窗口控制 (frameless) ======================
+function winMin()  { try { window.pywebview && window.pywebview.api.minimize_window(); } catch(e){} }
+function winMax()  { try { window.pywebview && window.pywebview.api.toggle_maximize(); } catch(e){} }
+function winClose(){
+  if (confirm('确定要退出微信工作日报助手吗？')) {
+    try { window.pywebview && window.pywebview.api.close_window(); } catch(e){}
+  }
+}
+// 异步获取版本号回填顶栏
+fetch('/api/version').then(function(r){return r.json()}).then(function(d){
+  var el = document.getElementById('titlebarVer');
+  if (el && d && d.version) el.textContent = 'v' + d.version;
+}).catch(function(){});
 
 // ====================== 侧栏折叠 ======================
 function toggleSidebar() {
