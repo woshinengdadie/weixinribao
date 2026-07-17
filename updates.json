@@ -1,6 +1,6 @@
 {
-  "version": "2.0.1.17",
+  "version": "2.1.0.0",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "新增自动更新检查、构建脚本自动打开发布页",
-  "date": "2026-07-16"
+  "notes": "无边框窗口：自定义HTML标题栏（拖拽+窗口控制按钮）、版本号显示、CHANGELOG防空条目、构建编码修复",
+  "date": "2026-07-17"
 }
