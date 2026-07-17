@@ -44,6 +44,9 @@ if exist "installer_output" (
     rmdir /s /q "installer_output" 2>nul
 )
 
+:: 同步 VERSION -> installer.iss
+%PYTHON% tools\version.py update-iss
+
 :: 编译安装包
 echo [1/2] 编译安装包...
 "%ISCC%" /Q "installer.iss"
