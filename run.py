@@ -12,7 +12,7 @@
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
 # pyright: reportDeprecated=false, reportUnreachable=false, reportMissingTypeStubs=false
 
-__version__ = "2.1.0.1"  # Auto-updated by build script
+__version__ = "2.1.0.0"  # Auto-updated by build script
 
 import io
 import os
