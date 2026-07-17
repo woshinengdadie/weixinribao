@@ -125,16 +125,13 @@ if exist "build" (
 echo [OK] 清理完成
 echo.
 
-::: 自动递增版本号 + 生成版本信息文件
-echo [3.5/6] 更新版本号...
-%PYTHON% tools\version.py bump
-if %errorlevel% neq 0 (
-    echo   [警告] 版本号递增失败，使用当前版本
-)
+:::  同步版本号（不自动 bump）
+echo [3.5/6] 同步版本号...
 %PYTHON% tools\version.py gen-file -o build\version_info.txt
 %PYTHON% tools\version.py update-run
-echo   [OK] 版本号已更新 （VERSION + run.py + version_info.txt）
-echo   [提示] CHANGELOG.md 请手动编辑或使用: python tools\version.py update-changelog -m "说明"
+%PYTHON% tools\version.py update-iss
+echo   [OK] 版本号已同步（VERSION + run.py + version_info.txt + installer.iss）
+echo   [提示] 发新版前手动: python tools\version.py bump --level build
 echo.
 
 ::: PyInstaller 构建
