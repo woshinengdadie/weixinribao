@@ -696,7 +696,10 @@ input[type="number"]:focus,select:focus{
                 <span>从</span>
                 <input type="date" id="manualDate">
                 <input type="time" id="manualTime" value="00:00">
-                <span style="color:#888">→ 现在</span>
+                <span style="color:#888">到</span>
+                <input type="date" id="manualDateEnd">
+                <input type="time" id="manualTimeEnd">
+                <span style="color:#888;cursor:pointer" onclick="resetManualEnd()" title="恢复为现在">现在</span>
               </div>
             </div>
             <div class="sep"></div>
@@ -821,7 +824,9 @@ input[type="number"]:focus,select:focus{
                 <span>从</span>
                 <input type="date" id="chatAnalyzeDate" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
                 <input type="time" id="chatAnalyzeTime" value="00:00" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
-                <span style="color:#888">→ 现在</span>
+                <span style="color:#888">到</span>
+                <input type="date" id="chatAnalyzeDateEnd" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
+                <input type="time" id="chatAnalyzeTimeEnd" style="padding:5px 8px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;outline:none">
               </div>
               <div style="margin-top:10px">
                 <textarea id="chatAnalyzeRequirement" placeholder="分析要求，如：重点分析项目风险、人员动态...留空则全面分析"
@@ -1084,8 +1089,25 @@ function switchTab(el, panelId) {
 }
 
 // ====================== Init ======================
-document.getElementById('manualDate').valueAsDate = new Date();
-document.getElementById('chatAnalyzeDate').valueAsDate = new Date();
+(function setEndDefaults(){
+  function pad(n){return n<10?'0'+n:n}
+  var now = new Date();
+  var dateStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  var timeStr = pad(now.getHours())+':'+pad(now.getMinutes());
+  ['manual','chatAnalyze'].forEach(function(p){
+    document.getElementById(p+'Date').valueAsDate = new Date();
+    var dE = document.getElementById(p+'DateEnd');
+    var tE = document.getElementById(p+'TimeEnd');
+    if (dE && !dE.value) dE.value = dateStr;
+    if (tE && !tE.value) tE.value = timeStr;
+  });
+})();
+function resetManualEnd(){
+  var now = new Date();
+  function pad(n){return n<10?'0'+n:n}
+  document.getElementById('manualDateEnd').value = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  document.getElementById('manualTimeEnd').value = pad(now.getHours())+':'+pad(now.getMinutes());
+}
 loadConfig();
 startSSE();
 
@@ -1247,13 +1269,19 @@ async function manualRun() {
   }
   const dateEl = document.getElementById('manualDate');
   const timeEl = document.getElementById('manualTime');
+  const dateElEnd = document.getElementById('manualDateEnd');
+  const timeElEnd = document.getElementById('manualTimeEnd');
   const d = new Date(dateEl.value + 'T' + timeEl.value);
-  if (d > new Date()) { toast('不能设置未来时间', 'err'); return; }
+  const dEnd = new Date(dateElEnd.value + 'T' + timeElEnd.value);
+  if (d > new Date()) { toast('开始时间不能是未来', 'err'); return; }
+  if (dEnd > new Date()) { toast('结束时间不能是未来', 'err'); return; }
+  if (dEnd < d) { toast('结束时间不能早于开始时间', 'err'); return; }
   const dateFrom = dateEl.value + ' ' + timeEl.value;
+  const dateTo = dateElEnd.value + ' ' + timeElEnd.value;
   // 提前设标志，避免 await 往返期间双击重复触发
   manualRunning = true;
   updateManualBtn(true);
-  const res = await api('/api/run/manual', 'POST', {date_from: dateFrom});
+  const res = await api('/api/run/manual', 'POST', {date_from: dateFrom, date_to: dateTo});
   if (res && res.success) {
     toast('开始手动运行...');
   } else {
@@ -1632,11 +1660,20 @@ async function startChatAnalyze() {
 
   var d = document.getElementById('chatAnalyzeDate').value;
   var t = document.getElementById('chatAnalyzeTime').value || '00:00';
+  var dEnd = document.getElementById('chatAnalyzeDateEnd').value;
+  var tEnd = document.getElementById('chatAnalyzeTimeEnd').value || '00:00';
   if (d) {
     var dt = new Date(d + 'T' + t);
-    if (dt > new Date()) { toast('不能设置未来时间', 'err'); return; }
+    if (dt > new Date()) { toast('开始时间不能是未来', 'err'); return; }
+  }
+  if (d && dEnd) {
+    var dtEnd = new Date(dEnd + 'T' + tEnd);
+    var dtStart = new Date(d + 'T' + t);
+    if (dtEnd > new Date()) { toast('结束时间不能是未来', 'err'); return; }
+    if (dtEnd < dtStart) { toast('结束时间不能早于开始时间', 'err'); return; }
   }
   var dateFrom = d ? (d + ' ' + t) : '';
+  var dateTo = dEnd ? (dEnd + ' ' + tEnd) : '';
   var requirement = document.getElementById('chatAnalyzeRequirement').value.trim();
 
   document.getElementById('chatAnalyzeStatus').textContent = '⏳ 分析中...';
@@ -1649,6 +1686,7 @@ async function startChatAnalyze() {
   var res = await api('/api/analyze/chat', 'POST', {
     chats: chats,
     date_from: dateFrom,
+    date_to: dateTo,
     requirement: requirement,
   });
   if (res && res.success) {

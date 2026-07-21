@@ -115,16 +115,14 @@ class ChatAnalyzer:
                 })
         return results
 
-    def _get_chat_history(self, chat_name: str, since: datetime, limit: int = 500) -> List[str]:
+    def _get_chat_history(self, chat_name: str, since: datetime, limit: int = 500, until: Optional[datetime] = None) -> List[str]:
         """获取指定会话的原始消息文本"""
         from wechat_reader import _extract_json as ext_json
         since_str = since.strftime("%Y-%m-%d %H:%M:%S")
-        output = self._reader._run_wechat_cli_inprocess(
-            "history", chat_name,
-            "--start-time", since_str,
-            "--limit", str(limit),
-            "--format", "json",
-        )
+        args = ["history", chat_name, "--start-time", since_str, "--limit", str(limit), "--format", "json"]
+        if until:
+            args += ["--end-time", until.strftime("%Y-%m-%d %H:%M:%S")]
+        output = self._reader._run_wechat_cli_inprocess(*args)
         if not output:
             logger.warning(f"ChatAnalyzer: [{chat_name}] 无输出")
             return []
@@ -324,6 +322,7 @@ class ChatAnalyzer:
         self,
         chat_names: List[str],
         since: datetime,
+        until: Optional[datetime] = None,
         requirement: Optional[str] = None,
         progress: Optional[Callable] = None,
         stop_event: Optional[threading.Event] = None,
@@ -333,6 +332,7 @@ class ChatAnalyzer:
         Args:
             chat_names: 要分析的会话列表
             since: 起始时间
+            until: 结束时间（可选，默认到当前）
             requirement: 用户自定义分析要求（留空则全面分析）
             progress: 进度回调
             stop_event: 停止事件
@@ -352,8 +352,9 @@ class ChatAnalyzer:
             + (f"\n  自定义要求: {requirement[:60]}..." if requirement else "（全面分析）"))
 
         now = datetime.now()
-        date_str = f"{since.strftime('%Y-%m-%d %H:%M')} → {now.strftime('%Y-%m-%d %H:%M')}"
-        date_filename = now.strftime("%Y%m%d_%H%M%S")
+        end_time = until or now
+        date_str = f"{since.strftime('%Y-%m-%d %H:%M')} → {end_time.strftime('%Y-%m-%d %H:%M')}"
+        date_filename = end_time.strftime("%Y%m%d_%H%M%S")
 
         all_results = []
         for i, chat_name in enumerate(chat_names):
@@ -362,7 +363,7 @@ class ChatAnalyzer:
                 break
 
             log(f"[{i+1}/{len(chat_names)}] 正在获取 [{chat_name}] 的消息...")
-            messages = self._get_chat_history(chat_name, since)
+            messages = self._get_chat_history(chat_name, since, until=end_time)
             if not messages:
                 log(f"  [{chat_name}] 无消息")
                 all_results.append({"chat": chat_name, "error": "无消息", "messages": []})

@@ -485,6 +485,7 @@ def api_manual_run():
 
     data = request.json or {}
     date_from = data.get("date_from", "")
+    date_to = data.get("date_to", "")
     run_type = "手动运行"
 
     config = _load_config()
@@ -511,7 +512,19 @@ def api_manual_run():
     else:
         since_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    date_to_str = now.strftime("%Y-%m-%d %H:%M")
+    if date_to:
+        try:
+            to_dt = datetime.strptime(date_to, "%Y-%m-%d %H:%M")
+        except ValueError:
+            return jsonify({"success": False, "message": "结束日期格式错误，示例: 2026-06-24 18:00"})
+        if to_dt > now:
+            return jsonify({"success": False, "message": "结束时间不能是未来"})
+        if to_dt < since_dt:
+            return jsonify({"success": False, "message": "结束时间不能早于开始时间"})
+    else:
+        to_dt = now
+
+    date_to_str = to_dt.strftime("%Y-%m-%d %H:%M")
     date_from_str = since_dt.strftime("%Y-%m-%d %H:%M")
 
     _progress_sink(f"手动运行: 从 {date_from_str} 到 {date_to_str}")
@@ -1092,6 +1105,7 @@ def api_analyze_chat():
     data = request.json or {}
     chat_names = data.get("chats", [])
     date_from = data.get("date_from", "")
+    date_to = data.get("date_to", "")
     requirement = (data.get("requirement") or "").strip()
     if not chat_names:
         return jsonify({"success": False, "message": "请选择至少一个会话"})
@@ -1106,6 +1120,18 @@ def api_analyze_chat():
     else:
         since_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    if date_to:
+        try:
+            to_dt = datetime.strptime(date_to, "%Y-%m-%d %H:%M")
+        except ValueError:
+            return jsonify({"success": False, "message": "结束日期格式错误"})
+        if to_dt > now:
+            return jsonify({"success": False, "message": "结束时间不能是未来"})
+        if to_dt < since_dt:
+            return jsonify({"success": False, "message": "结束时间不能早于开始时间"})
+    else:
+        to_dt = None
+
     _progress_sink(f"开始分析 {len(chat_names)} 个会话: {', '.join(chat_names[:5])}..."
                    + (f"\n  分析要求: {requirement[:80]}" if requirement else ""))
 
@@ -1119,7 +1145,7 @@ def api_analyze_chat():
             from chat_analyzer import ChatAnalyzer
             analyzer = ChatAnalyzer(config)
             result = analyzer.analyze(
-                chat_names, since_dt,
+                chat_names, since_dt, to_dt,
                 requirement=requirement or None,
                 progress=_progress_sink,
                 stop_event=stop_ev,
