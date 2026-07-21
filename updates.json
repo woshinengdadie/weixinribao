@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0.0",
+  "version": "2.1.1.0",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "无边框窗口：自定义HTML标题栏（拖拽+窗口控制按钮）、版本号显示、CHANGELOG防空条目、构建编码修复",
-  "date": "2026-07-17"
+  "notes": "时间范围选择升级：支持自定义开始和结束时间，可分析任意历史时段",
+  "date": "2026-07-21"
 }
