@@ -193,6 +193,7 @@ class Summarizer:
             "todos": [],
             "risk_points": [],
             "insights": "",
+            "extra": {},
         }
 
     def _build_llm_prompt(self, analysis: Dict, date_str: str,
@@ -236,10 +237,13 @@ class Summarizer:
         rule_prompt = self._config.get("rule_prompt", "")
         if rule_prompt:
             # 有自定义规则：用它替换默认分析任务
+            # 额外分析维度：LLM 可输出 extra 对象承载自定义规则要求的内容
             analysis_task = f"""## 分析任务（遵循用户自定义规则）
 {rule_prompt}
 
-此外，请将结果按以下 JSON 格式输出："""
+请将分析结果填入 JSON 各字段：
+- insights / risk_points / todos 按上述要求正常输出
+- 如果规则要求输出标准字段之外的维（例如团队成员、新需求、周期性风险等），请放在 extra 对象里，key 用有意义的英文标识，value 可以是字符串、数组或对象（不要超过3个key）"""
         elif local_mode:
             analysis_task = """根据上面的聊天记录，完成两件事后用JSON输出：
 
@@ -269,17 +273,21 @@ class Summarizer:
         if local_mode:
             output_fmt = '输出格式示例（严格按此格式，只输出JSON）：{"insights":"工作概括","risk_points":[{"risk":"风险","level":"高/中/低","chat":"群名","suggestion":"建议"}]}'
         else:
-            output_fmt = """## 输出格式
+            extra_part = ""
+            if rule_prompt:
+                extra_part = ',\n  "extra": { "key": "对象，自定义分析的额外维度（如果没有额外内容则留空 {}）" }\n'
+            else:
+                extra_part = "\n"
+            output_fmt = f"""## 输出格式
 请以 JSON 格式返回，包含以下字段：
-{
+{{
   "insights": "工作感悟文字，2-4句话，自然语言",
   "risk_points": [
-    {"risk": "风险描述（要具体）", "level": "高/中/低", "chat": "来源群聊", "suggestion": "建议应对措施"}
+    {{{{"risk": "风险描述（要具体）", "level": "高/中/低", "chat": "来源群聊", "suggestion": "建议应对措施"}}}}
   ],
   "todos": [
-    {"title": "待办事项（具体可执行）", "chat": "来源群聊", "person": "安排人（可选）", "context": "上下文说明", "priority": "高/中/低", "deadline": "截止时间（没有则为空字符串）"}
-  ]
-}
+    {{{{"title": "待办事项（具体可执行）", "chat": "来源群聊", "person": "安排人（可选）", "context": "上下文说明", "priority": "高/中/低", "deadline": "截止时间（没有则为空字符串）"}}}}
+  ]{extra_part}}}
 
 注意：
 - insights 必须是自然语言段落，不要分点
@@ -364,6 +372,7 @@ class Summarizer:
                 "todos": summary.get("todos", []),
                 "risk_points": summary.get("risk_points", []),
                 "insights": summary.get("insights", ""),
+                "extra": summary.get("extra", {}),
             }
 
         except Exception as e:
@@ -431,6 +440,7 @@ class Summarizer:
                 "todos": summary.get("todos", []),
                 "risk_points": summary.get("risk_points", []),
                 "insights": summary.get("insights", ""),
+                "extra": summary.get("extra", {}),
             }
 
         except Exception as e:
@@ -447,7 +457,7 @@ class Summarizer:
             date_str: 日期
 
         Returns:
-            { "todos": [...], "risk_points": [...], "insights": str }
+            { "todos": [...], "risk_points": [...], "insights": str, "extra": {} }
         """
         # 判断是否有内容需要总结：我发言了、或者有未回复/提到我的消息
         has_my_msg = analysis.get("my_count", 0) > 0
@@ -473,6 +483,7 @@ class Summarizer:
                     "todos": [],
                     "risk_points": [],
                     "insights": "",
+                    "extra": {},
                     "_llm_error": f"本地模型加载失败: {err}",
                 }
             elif self._client:

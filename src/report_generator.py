@@ -122,6 +122,30 @@ class ReportGenerator:
             lines.append("暂无待办事项。")
             lines.append("")
 
+        # ===== 自定义分析维度 (extra) =====
+        extra = summary.get("extra", {})
+        if llm_summary_enabled and isinstance(extra, dict) and extra:
+            lines.append("## 自定义分析")
+            lines.append("")
+            for key, value in extra.items():
+                # 可读化的 key
+                display_key = key.replace("_", " ").title()
+                lines.append(f"### {display_key}")
+                lines.append("")
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            for k, v in item.items():
+                                lines.append(f"- **{k}**: {v}")
+                        else:
+                            lines.append(f"- {item}")
+                elif isinstance(value, dict):
+                    for k, v in value.items():
+                        lines.append(f"- **{k}**: {v}")
+                else:
+                    lines.append(str(value))
+                lines.append("")
+
         content = "\n".join(lines)
 
         # 确保输出目录存在
