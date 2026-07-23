@@ -1,6 +1,6 @@
 {
-  "version": "2.1.1.0",
+  "version": "2.1.2.0",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "时间范围选择升级：支持自定义开始和结束时间，可分析任意历史时段",
-  "date": "2026-07-21"
+  "notes": "规则逻辑支持 extra 字段：自定义分析维度可输出到日报，支持字符串/数组/嵌套对象",
+  "date": "2026-07-23"
 }
