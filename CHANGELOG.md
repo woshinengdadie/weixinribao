@@ -4,9 +4,17 @@
 
 ### 新增
 - **API 本地鉴权**：每次启动随机生成 token，索引页注入 `__APP_TOKEN__`，所有 `/api/*` 必须带 `X-Auth-Token` 才能调用
+- **pytest 测试套件**：32 个自动化测试覆盖 JSON 解析、日报渲染、API 鉴权
 
 ### 修复
 - Flask debug 模式关闭（生产模式）
+- `_parse_llm_json` 无 `{}` 输入不降级正则提取的 bug
+- `_read_version` 非 frozen 时 `_MEIPASS` 空产生相对路径
+- `local_llm.py` 重复 `_get_project_root()` 函数定义
+- `set_secret.js` 路径硬编码 `APPDATA/xdg.config`（Windows 无效）+ 正则空指针
+- 版本号 `v--` 显示：改为页头注入 `__APP_VERSION__`，不再依赖异步 API
+- 恢复 `console.error`（之前全部禁掉导致排错困难）
+- Python 3.14 移除 `hashlib.compare_digest`，改用 `hmac.compare_digest`
 
 ### 安全
 - 删除 `/api/debug/keys` 调试接口（泄漏文件系统路径和密钥位置）
@@ -14,7 +22,6 @@
 - `chat_analyzer.py` todo/risk 项加 `isinstance` 守卫，LLM 返回脏数据不再崩溃
 - `local_llm.py` 加推理锁，并发调用不再串台
 - 删除 `tools/cloudflare-worker/fix_secret.js`，`set_secret.js` 改为读 env 变量
-- 修复 Python 3.14 移除 `hashlib.compare_digest`，改用 `hmac.compare_digest`
 
 ## v2.1.2.0 (2026-07-23)
 
