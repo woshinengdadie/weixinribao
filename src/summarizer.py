@@ -41,7 +41,8 @@ def _parse_llm_json(text: str) -> Optional[Dict]:
         start = clean.find("{")
         end = clean.rfind("}") + 1
         if start < 0 or end <= start:
-            return None
+            # 没有 JSON 对象，尝试正则降级提取
+            return _regex_extract(clean)
         json_block = clean[start:end]
 
         # 尝试 1: 直接解析
