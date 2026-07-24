@@ -2,7 +2,7 @@
 ; 不依赖外部语言文件，全部中文内嵌
 
 #define MyAppName "微信工作日报助手"
-#define MyAppVersion "2.1.3.0"
+#define MyAppVersion "2.2.0.0"
 #define MyAppPublisher "WeChatWorkAgent"
 #define MyAppExeName "WeChatWorkAgent.exe"
 
@@ -24,6 +24,9 @@ ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayName={#MyAppName}
 SetupIconFile=assets\app_icon.ico
 UninstallDisplayIcon={app}\WeChatWorkAgent.exe
+; 自动更新支持：检测并优雅关闭运行中的旧版本
+CloseApplications=yes
+CloseApplicationsFilter=WeChatWorkAgent.exe;run.py;python.exe
 
 [Tasks]
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式:"
@@ -40,7 +43,7 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autoprograms}\{#MyAppName}\卸载"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall
 
 [Code]
 procedure InitializeWizard;

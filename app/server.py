@@ -1386,7 +1386,7 @@ def api_update_check():
     import json as _json
     try:
         req = urllib.request.Request(
-            "https://raw.githubusercontent.com/woshinengdadie/weixinribao/main/updates.json"
+            "https://gitee.com/gu-pengcheng1314/wechat-daily-assistant/raw/main/updates.json"
         )
         req.add_header("User-Agent", "WeChatWorkAgent/check")
         with urllib.request.urlopen(req, timeout=8) as resp:
@@ -1411,6 +1411,52 @@ def api_update_check():
         "url": data.get("url", ""),
         "date": data.get("date", ""),
     })
+
+
+@app.route("/api/update/apply", methods=["POST"])
+def api_update_apply():
+    """自动下载并安装新版本（前端用户点击「立即更新」后调用）
+
+    启动下载后会立即退出当前程序以让安装程序接替，调用成功会快速返回。
+    """
+    import json as _json
+    import subprocess as _subprocess
+    import tempfile as _tempfile
+    try:
+        req = urllib.request.Request(
+            "https://gitee.com/gu-pengcheng1314/wechat-daily-assistant/raw/main/updates.json"
+        )
+        req.add_header("User-Agent", "WeChatWorkAgent/apply")
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
+        dl_url = data.get("url", "")
+        if not dl_url or not dl_url.startswith(("http://", "https://")):
+            return jsonify({"success": False, "message": "下载地址无效"})
+
+        # 下载到临时目录
+        tmp_dir = _tempfile.gettempdir()
+        filename = os.path.basename(dl_url.split("?")[0]) or "WeChatWorkAgent_Setup.exe"
+        tmp_path = os.path.join(tmp_dir, filename)
+        logger.info(f"[update-apply] 下载更新: {dl_url}")
+        dl_req = urllib.request.Request(dl_url, headers={"User-Agent": f"WeChatWorkAgent/{_read_version()}"})
+        with urllib.request.urlopen(dl_req, timeout=300) as resp:
+            with open(tmp_path, "wb") as f:
+                while True:
+                    chunk = resp.read(64 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+
+        # 启动安装程序（先启动，再退出当前程序）
+        install_args = [tmp_path, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]
+        logger.info(f"[update-apply] 启动安装: {' '.join(install_args)}")
+        _subprocess.Popen(install_args, close_fds=True)
+        # 退出当前程序
+        import threading
+        threading.Thread(target=lambda: (time.sleep(0.5), os._exit(0)), daemon=True).start()
+        return jsonify({"success": True, "message": "已开始安装，程序即将关闭"})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"更新失败: {e}"})
 
 
 def _read_version() -> str:

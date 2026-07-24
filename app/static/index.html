@@ -1879,9 +1879,19 @@ async function checkUpdate() {
   if (res.has_update) {
     var msg = '发现新版本 v' + res.latest_version + '（当前 v' + res.current_version + '）\n\n';
     if (res.notes) msg += res.notes + '\n\n';
-    msg += '是否打开下载页面？';
+    msg += '点击「是」自动下载并安装（推荐），「否」手动到下载页面更新。';
     if (confirm(msg)) {
-      await api('/api/file/open', 'POST', {path: res.url || ''});
+      toast('📥 开始下载更新...');
+      var apply = await api('/api/update/apply', 'POST');
+      if (apply && apply.success) {
+        toast('✅ 更新已启动，等待安装完成...');
+        // 几秒后程序会自动退出，安装程序接管
+      } else {
+        toast((apply && apply.message) || '更新失败', 'err');
+      }
+    } else {
+      // 用户选择手动打开下载页
+      if (res.url) await api('/api/file/open', 'POST', {path: res.url});
     }
   } else {
     toast('✅ 已是最新版本 v' + res.current_version);
