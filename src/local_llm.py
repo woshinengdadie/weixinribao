@@ -191,6 +191,7 @@ class LocalLLM:
         self._llama = None
         self._model_path = None
         self._load_error = None
+        self._inference_lock = threading.Lock()  # 防并发推理导致输出错乱
         self._init_model()
 
     # ---- 路径 ----
@@ -392,18 +393,19 @@ class LocalLLM:
             logger.error("[LocalLLM] 模型未加载，无法推理")
             return None
 
-        try:
-            response = self._llama.create_chat_completion(
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            content = response["choices"][0]["message"]["content"]
-            logger.info("[LocalLLM] 推理完成, 生成 %d 字符", len(content or ""))
-            return content
-        except Exception as e:
-            logger.error("[LocalLLM] 推理失败: %s", e)
-            return None
+        with self._inference_lock:
+            try:
+                response = self._llama.create_chat_completion(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                content = response["choices"][0]["message"]["content"]
+            except Exception as e:
+                logger.error("[LocalLLM] 推理失败: %s", e)
+                return None
+        logger.info("[LocalLLM] 推理完成, 生成 %d 字符", len(content or ""))
+        return content
 
     def _unload(self):
         """卸载模型释放内存"""

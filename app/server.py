@@ -48,6 +48,32 @@ if not os.path.isdir(_static_folder):
     _static_folder = os.path.join(os.path.dirname(__file__), "static")
 app = Flask(__name__, static_folder=_static_folder, static_url_path="")
 
+# ======== 本地 API 鉴权 ========
+import secrets as _secrets
+import hashlib as _hashlib
+_API_TOKEN = _secrets.token_hex(32)  # 每次启动生成随机 token，仅本进程可用
+
+
+@app.before_request
+def _check_auth():
+    """对所有 /api/* 请求校验本地 token（SSE/static 除外）"""
+    if not request.path.startswith("/api/"):
+        return None
+    if request.path == "/api/log/stream":
+        # SSE EventSource 不支持自定义 header，token 通过 URL 参数 ?token=xxx 携带
+        token = request.args.get("token", "")
+        if not token or not _cmp_token(token):
+            return jsonify({"success": False, "message": "forbidden"}), 403
+        return None
+    token = request.headers.get("X-Auth-Token", "")
+    if not token or not _cmp_token(token):
+        return jsonify({"success": False, "message": "forbidden"}), 403
+
+
+def _cmp_token(token: str) -> bool:
+    """常数时间比较防止时序攻击"""
+    return _hashlib.compare_digest(token, _API_TOKEN)
+
 # 全局状态（线程安全）
 _log_queue = LogQueue.get()
 _scheduler_lock = threading.Lock()
@@ -292,7 +318,18 @@ def _maybe_auto_weekly(config: dict):
 
 @app.route("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    html_path = os.path.join(app.static_folder, "index.html")
+    if os.path.exists(html_path):
+        with open(html_path, encoding="utf-8") as f:
+            content = f.read()
+    else:
+        content = "<!doctype html><html><body>UI 文件缺失</body></html>"
+    # 注入 token 和 SSE URL（含 token），确保前端 API 调用可鉴权
+    sse_url = f"/api/log/stream?token={_API_TOKEN}"
+    inject = f'<script>window.__APP_TOKEN__="{_API_TOKEN}";window.__SSE_URL__="{sse_url}";</script>'
+    content = content.replace("</head>", inject + "\n</head>")
+    return Response(content, mimetype="text/html; charset=utf-8")
+
 
 
 # --- 配置 ---
@@ -834,33 +871,6 @@ def api_debug_db_dir():
                     info["files"].append({"name": f, "size_kb": os.path.getsize(p) // 1024, "rel": os.path.relpath(p, db_dir)})
                 except OSError:
                     info["files"].append({"name": f, "size_kb": -1, "rel": "?"})
-    return jsonify(info)
-
-
-@app.route("/api/debug/keys", methods=["GET"])
-def api_debug_keys():
-    """诊断密钥状态"""
-    import glob
-    home = os.path.expanduser("~/.wechat-cli")
-    info = {"home_exists": os.path.isdir(home), "files": []}
-    if os.path.isdir(home):
-        for root, _dirs, _files in os.walk(home):
-            for f in _files:
-                p = os.path.join(root, f)
-                try:
-                    info["files"].append({"path": p, "size": os.path.getsize(p)})
-                except OSError:
-                    info["files"].append({"path": p, "size": -1})
-        all_keys = os.path.join(home, "all_keys.json")
-        if os.path.exists(all_keys):
-            with open(all_keys) as f:
-                data = json.load(f)
-                info["key_count"] = len(data)
-                info["keys_sample"] = list(data.keys())[:5]
-        config = os.path.join(home, "config.json")
-        if os.path.exists(config):
-            with open(config) as f:
-                info["config"] = json.load(f)
     return jsonify(info)
 
 
@@ -1477,9 +1487,13 @@ def api_file_open():
         except Exception as e:
             return jsonify({"success": False, "message": f"打开URL失败: {e}"})
 
-    # 本地路径：转换为绝对路径并启动
+    # 本地路径：限制仅允许打开 output 目录下文件
     if not os.path.isabs(path):
         path = os.path.join(PROJECT_ROOT, path)
+    abs_path = os.path.abspath(path)
+    abs_output = os.path.abspath(_get_output_dir())
+    if not abs_path.startswith(abs_output + os.sep) and abs_path != abs_output:
+        return jsonify({"success": False, "message": "路径不在允许范围内"})
 
     try:
         if os.path.exists(path):
@@ -1618,4 +1632,4 @@ if __name__ == "__main__":
     )
     port = int(os.environ.get("PORT", 5566))
     logger.info(f"Flask 调试服务启动于 http://127.0.0.1:{port}")
-    app.run(host="127.0.0.1", port=port, debug=True, use_reloader=False)
+    app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False)

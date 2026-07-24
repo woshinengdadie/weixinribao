@@ -38,8 +38,18 @@ function setSecret(val) {
 }
 
 async function main() {
-  const val = "MySecret2026";
-  console.log("Setting ADMIN_SECRET to:", val, "length:", val.length, "chars:", val.split("").map(c=>c.charCodeAt(0)));
+  // 从环境变量 ADMIN_SECRET 读取，不再硬编码
+  const val = process.env.ADMIN_SECRET;
+  if (!val) {
+    console.error("ERROR: ADMIN_SECRET env var not set.");
+    console.error("Usage: $env:ADMIN_SECRET='your-secret'; node set_secret.js");
+    process.exit(1);
+  }
+  if (val.length < 12) {
+    console.error("ERROR: ADMIN_SECRET too short (min 12 chars)");
+    process.exit(1);
+  }
+  console.log("Setting ADMIN_SECRET, length:", val.length);
   await delSecret().catch(() => {});
   const r = await setSecret(val);
   console.log("Result:", JSON.stringify(r));

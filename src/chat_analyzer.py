@@ -479,10 +479,15 @@ class ChatAnalyzer:
 
                 # 待办
                 todos = analysis.get("todos", [])
+                if not isinstance(todos, list):
+                    todos = []
                 if todos:
                     lines.append("### ✅ 待办事项")
                     lines.append("")
                     for t in todos:
+                        if not isinstance(t, dict):
+                            lines.append(f"- {t}")
+                            continue
                         title = t.get("title", "")
                         person = t.get("person", "")
                         priority = t.get("priority", "中")
@@ -498,10 +503,15 @@ class ChatAnalyzer:
 
                 # 风险
                 risks = analysis.get("risks", [])
+                if not isinstance(risks, list):
+                    risks = []
                 if risks:
                     lines.append("### ⚠️ 风险与问题")
                     lines.append("")
                     for risk in risks:
+                        if not isinstance(risk, dict):
+                            lines.append(f"- {risk}")
+                            continue
                         r_text = risk.get("risk", "")
                         level = risk.get("level", "中")
                         suggestion = risk.get("suggestion", "")

@@ -1122,9 +1122,15 @@ startSSE();
 // ====================== API ======================
 async function api(url, method='GET', data=null) {
   try {
-    const opts = {method, headers:{'Content-Type':'application/json'}};
+    var headers = {'Content-Type':'application/json'};
+    if (window.__APP_TOKEN__) headers['X-Auth-Token'] = window.__APP_TOKEN__;
+    const opts = {method, headers:headers};
     if (data) opts.body = JSON.stringify(data);
     const res = await fetch(url, opts);
+    if (res.status === 403) {
+      console.error('API ' + url + ' forbidden (token mismatch)');
+      return null;
+    }
     if (!res.ok) {
       console.warn('API ' + url + ' returned ' + res.status);
       return null;
@@ -1763,7 +1769,8 @@ function quitApp() {
 // ====================== SSE Log ======================
 var _sseRetryDelay = 1000;
 function startSSE() {
-  const source = new EventSource('/api/log/stream');
+  var sseUrl = window.__SSE_URL__ || '/api/log/stream';
+  const source = new EventSource(sseUrl);
   source.onmessage = function(e) {
     try { const data = JSON.parse(e.data); addLog(data.time, data.text); } catch {}
   };
