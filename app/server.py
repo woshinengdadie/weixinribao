@@ -50,7 +50,7 @@ app = Flask(__name__, static_folder=_static_folder, static_url_path="")
 
 # ======== 本地 API 鉴权 ========
 import secrets as _secrets
-import hashlib as _hashlib
+import hmac as _hmac
 _API_TOKEN = _secrets.token_hex(32)  # 每次启动生成随机 token，仅本进程可用
 
 
@@ -72,7 +72,7 @@ def _check_auth():
 
 def _cmp_token(token: str) -> bool:
     """常数时间比较防止时序攻击"""
-    return _hashlib.compare_digest(token, _API_TOKEN)
+    return _hmac.compare_digest(token, _API_TOKEN)
 
 # 全局状态（线程安全）
 _log_queue = LogQueue.get()
