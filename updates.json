@@ -1,6 +1,6 @@
 {
   "version": "2.2.0.0",
-  "url": "https://gitee.com/gu-pengcheng1314/wechat-daily-assistant/releases/download/v2.2.0.0/WeChatWorkAgent_Setup_v2.2.0.0.exe",
+  "url": "https://wechat-update-1410978772.cos.ap-shanghai.myqcloud.com/WeChatWorkAgent_Setup_v2.2.0.0.exe",
   "notes": "切换至Gitee国内镜像、自动下载安装更新：用户点确认后自动完成下载+静默安装+重启",
   "date": "2026-07-24"
 }
