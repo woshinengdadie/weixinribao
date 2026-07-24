@@ -1415,16 +1415,17 @@ def api_update_check():
 
 def _read_version() -> str:
     """从多位置查找 VERSION 文件，兼容 dev / PyInstaller 打包环境"""
-    candidates = [
-        # 1) PyInstaller 打包：_MEIPASS 指向 _internal/ 目录
-        os.path.join(getattr(sys, "_MEIPASS", ""), "VERSION"),
-        # 2) 打包后同 exe 目录（COLLECT 模式可能在此）
-        os.path.join(os.path.dirname(sys.executable), "VERSION") if getattr(sys, "frozen", False) else "",
-        # 3) 源码模式：项目根
-        os.path.join(PROJECT_ROOT, "VERSION"),
-        # 4) 兜底：从本文件向上 1 级
-        os.path.join(os.path.dirname(__file__), "..", "VERSION"),
-    ]
+    candidates = []
+    # 1) PyInstaller 打包：_MEIPASS 指向 _internal/ 目录
+    if getattr(sys, "frozen", False):
+        candidates.append(os.path.join(getattr(sys, "_MEIPASS", ""), "VERSION"))
+    # 2) 打包后同 exe 目录（COLLECT 模式可能在此）
+    if getattr(sys, "frozen", False):
+        candidates.append(os.path.join(os.path.dirname(sys.executable), "VERSION"))
+    # 3) 源码模式：项目根
+    candidates.append(os.path.join(PROJECT_ROOT, "VERSION"))
+    # 4) 兜底：从本文件向上 1 级
+    candidates.append(os.path.join(os.path.dirname(__file__), "..", "VERSION"))
     for vfile in candidates:
         if vfile and os.path.exists(vfile):
             try:

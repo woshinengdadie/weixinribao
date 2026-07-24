@@ -154,12 +154,6 @@ def _test_llama_cpp_load() -> bool:
         return False
 
 
-def _get_project_root() -> str:
-    """获取项目根目录（兼容 PyInstaller 打包）"""
-    if getattr(sys, "frozen", False):
-        return os.path.dirname(os.path.abspath(sys.executable))
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 class LocalLLM:
     """本地 LLM 推理引擎（基于 llama-cpp-python）"""

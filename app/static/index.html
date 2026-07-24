@@ -1020,7 +1020,6 @@ input[type="number"]:focus,select:focus{
   }, 500);
 
   // 禁止控制台输出
-  try { console.log = console.warn = console.error = console.info = function(){}; } catch(e){}
 })();
 
 // ====================== 窗口控制 (frameless) ======================
@@ -1031,14 +1030,15 @@ function winClose(){
     try { window.pywebview && window.pywebview.api.close_window(); } catch(e){}
   }
 }
-// 优先读注入版本（无异步请求），失败兜底到 /api/version
+// 优先读注入版本（页头注入，无需请求），失败兜底到 /api/version
 (function(){
   var el = document.getElementById('titlebarVer');
   var v = window.__APP_VERSION__;
   if (el && v && v !== 'unknown') { el.textContent = 'v' + v; return; }
-  fetch('/api/version').then(function(r){return r.json()}).then(function(d){
+  // 兜底：带 token 的 API 请求（如果注入失败则此请求也会 403，但至少不静默）
+  api('/api/version').then(function(d){  // api() 自动带 token
     if (el && d && d.version && d.version !== 'unknown') el.textContent = 'v' + d.version;
-  }).catch(function(){});
+  });
 })();
 
 // ====================== 侧栏折叠 ======================

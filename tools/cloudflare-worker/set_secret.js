@@ -2,9 +2,26 @@ const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const configPath = path.join(process.env.APPDATA, "xdg.config", ".wrangler", "config", "default.toml");
+// Wrangler 配置文件：优先标准路径，Windows 兼容
+const possiblePaths = [
+  path.join(process.env.USERPROFILE || "~", ".wrangler", "config", "default.toml"),
+  path.join(process.env.APPDATA || "", "xdg.config", ".wrangler", "config", "default.toml"),
+];
+let configPath = null;
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) { configPath = p; break; }
+}
+if (!configPath) {
+  console.error("ERROR: Wrangler config not found. Tried:", possiblePaths);
+  process.exit(1);
+}
 const config = fs.readFileSync(configPath, "utf8");
-const token = config.match(/oauth_token\s*=\s*"([^"]+)"/)[1];
+const match = config.match(/oauth_token\s*=\s*"([^"]+)"/);
+if (!match) {
+  console.error("ERROR: oauth_token not found in Wrangler config:", configPath);
+  process.exit(1);
+}
+const token = match[1];
 
 const https = require("https");
 
