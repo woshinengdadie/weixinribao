@@ -70,7 +70,16 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
 begin
+  if CurStep = ssInstall then
+  begin
+    // 安装前强制关闭正在运行的旧版本（绕过 CloseApplicationsFilter 不稳定问题）
+    Exec('taskkill.exe', '/F /IM WeChatWorkAgent.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec('taskkill.exe', '/F /IM WeChatWorkAgent_Setup.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1500); {等待进程释放文件锁}
+  end;
   if CurStep = ssPostInstall then
   begin
     MsgBox(
