@@ -1,6 +1,6 @@
 {
-  "version": "2.1.2.0",
+  "version": "2.1.3.0",
   "url": "https://github.com/woshinengdadie/weixinribao/releases",
-  "notes": "规则逻辑支持 extra 字段：自定义分析维度可输出到日报，支持字符串/数组/嵌套对象",
-  "date": "2026-07-23"
+  "notes": "安全加固：本地API鉴权、Flask关debug、删除debug/keys、isinstance守卫、推理锁、文件白名单、移除硬编码密码",
+  "date": "2026-07-24"
 }

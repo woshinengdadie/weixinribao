@@ -324,10 +324,17 @@ def index():
             content = f.read()
     else:
         content = "<!doctype html><html><body>UI 文件缺失</body></html>"
-    # 注入 token 和 SSE URL（含 token），确保前端 API 调用可鉴权
+    # 注入 token、当前版本号、SSE URL（含 token），确保前端无需异步请求即可拿到
     sse_url = f"/api/log/stream?token={_API_TOKEN}"
-    inject = f'<script>window.__APP_TOKEN__="{_API_TOKEN}";window.__SSE_URL__="{sse_url}";</script>'
-    content = content.replace("</head>", inject + "\n</head>")
+    current_ver = _read_version()
+    inject = (
+        f'<script>'
+        f'window.__APP_TOKEN__="{_API_TOKEN}";'
+        f'window.__APP_VERSION__="{current_ver}";'
+        f'window.__SSE_URL__="{sse_url}";'
+        f'</script>'
+    )
+    content = content.replace("</head>", inject + "\n</head>", 1)
     return Response(content, mimetype="text/html; charset=utf-8")
 
 

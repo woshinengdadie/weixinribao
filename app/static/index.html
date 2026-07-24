@@ -1031,11 +1031,15 @@ function winClose(){
     try { window.pywebview && window.pywebview.api.close_window(); } catch(e){}
   }
 }
-// 异步获取版本号回填顶栏
-fetch('/api/version').then(function(r){return r.json()}).then(function(d){
+// 优先读注入版本（无异步请求），失败兜底到 /api/version
+(function(){
   var el = document.getElementById('titlebarVer');
-  if (el && d && d.version) el.textContent = 'v' + d.version;
-}).catch(function(){});
+  var v = window.__APP_VERSION__;
+  if (el && v && v !== 'unknown') { el.textContent = 'v' + v; return; }
+  fetch('/api/version').then(function(r){return r.json()}).then(function(d){
+    if (el && d && d.version && d.version !== 'unknown') el.textContent = 'v' + d.version;
+  }).catch(function(){});
+})();
 
 // ====================== 侧栏折叠 ======================
 function toggleSidebar() {

@@ -1,5 +1,21 @@
 # 更新日志 (CHANGELOG)
 
+## v2.1.3.0 (2026-07-24)
+
+### 新增
+- **API 本地鉴权**：每次启动随机生成 token，索引页注入 `__APP_TOKEN__`，所有 `/api/*` 必须带 `X-Auth-Token` 才能调用
+
+### 修复
+- Flask debug 模式关闭（生产模式）
+
+### 安全
+- 删除 `/api/debug/keys` 调试接口（泄漏文件系统路径和密钥位置）
+- `/api/file/open` 白名单：仅允许打开 output 目录内文件
+- `chat_analyzer.py` todo/risk 项加 `isinstance` 守卫，LLM 返回脏数据不再崩溃
+- `local_llm.py` 加推理锁，并发调用不再串台
+- 删除 `tools/cloudflare-worker/fix_secret.js`，`set_secret.js` 改为读 env 变量
+- 修复 Python 3.14 移除 `hashlib.compare_digest`，改用 `hmac.compare_digest`
+
 ## v2.1.2.0 (2026-07-23)
 
 ### 新增
