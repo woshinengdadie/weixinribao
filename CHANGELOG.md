@@ -1,5 +1,10 @@
 # 更新日志 (CHANGELOG)
 
+## v2.2.0.1 (2026-07-24)
+
+### 修复
+- 安装器升级时 `DeleteFile failed; code 5`：安装前 `CurStepChanged ssInstall` 用 taskkill 强制关闭运行的 `WeChatWorkAgent.exe`
+
 ## v2.2.0.0 (2026-07-24)
 
 ### 新增
