@@ -101,11 +101,8 @@ echo   OK 安装包生成完成！
 echo.
 echo   文件: installer_output\WeChatWorkAgent_Setup_*.exe
 echo.
-echo.   [下一步] 发布更新
-echo.   把 installer_output\ 下的安装包拖入下方页面发布：
-echo.   https://github.com/woshinengdadie/weixinribao/releases/new
+echo.   [下一步] 把 installer_output\ 下的安装包上传到 COS
+echo.   https://console.cloud.tencent.com/cos
 echo ============================================
 echo.
-
-start https://github.com/woshinengdadie/weixinribao/releases/new
 pause

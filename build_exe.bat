@@ -228,11 +228,8 @@ for /f "tokens=3" %%a in ('dir /s /-c "dist\WeChatWorkAgent" 2^>nul ^| findstr "
 for /f "tokens=3" %%a in ('dir /s /-c "dist\WeChatWorkAgent" 2^>nul ^| findstr "字节"') do set TOTAL_SIZE=%%a
 
 echo ============================================
-echo.   [下一步] 发布更新
-echo.   请打开以下页面，把 installer_output\ 下的安装包拖进去发布：
-echo.   https://github.com/woshinengdadie/weixinribao/releases/new
+echo.   [下一步] 把 installer_output\ 下的安装包上传到 COS
+echo.   https://console.cloud.tencent.com/cos
 echo ============================================
 echo.
-
-start https://github.com/woshinengdadie/weixinribao/releases/new
 pause
