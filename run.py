@@ -425,17 +425,55 @@ def _parse_version(ver_str: str) -> tuple:
         return (0,)
 
 
-UPDATE_URL = "https://raw.githubusercontent.com/woshinengdadie/weixinribao/main/updates.json"
+UPDATE_URL = "https://gitee.com/gu-pengcheng1314/wechat-daily-assistant/raw/main/updates.json"
 
 
-def check_for_updates(silent: bool = True) -> dict | None:
+def _auto_download_and_install(dl_url: str) -> bool:
+    """下载安装包 → 静默执行 → 退出当前程序（让安装程序接替）"""
+    import tempfile
+    import subprocess
+    try:
+        if not dl_url or not dl_url.startswith(("http://", "https://")):
+            raise ValueError(f"下载地址无效: {dl_url}")
+
+        tmp_dir = tempfile.gettempdir()
+        filename = os.path.basename(dl_url.split("?")[0]) or f"WeChatWorkAgent_Setup_{__version__}.exe"
+        tmp_path = os.path.join(tmp_dir, filename)
+        logger.info(f"[auto-update] 开始下载: {dl_url} → {tmp_path}")
+
+        req = urllib.request.Request(dl_url, headers={"User-Agent": f"WeChatWorkAgent/{__version__}"})
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            with open(tmp_path, "wb") as f:
+                while True:
+                    chunk = resp.read(64 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+        logger.info(f"[auto-update] 下载完成: {os.path.getsize(tmp_path)} bytes")
+
+        install_args = [tmp_path, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]
+        logger.info(f"[auto-update] 启动安装程序: {' '.join(install_args)}")
+        subprocess.Popen(
+            install_args,
+            close_fds=True,
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
+        return True
+    except Exception as e:
+        logger.error(f"[auto-update] 失败: {e}")
+        try:
+            _show_error("自动更新失败", f"{e}\n\n你可以手动下载:\n{dl_url}")
+        except Exception:
+            pass
+        return False
+
+
+def check_for_updates(silent: bool = True, auto_install: bool = False) -> dict | None:
     """检查是否有新版本可用
 
     Args:
-        silent: True 时仅在发现新版本时弹窗；False 时无论有无更新都弹窗（手动检查）
-
-    Returns:
-        有新版时返回服务器版本信息 dict，否则返回 None
+        silent: True 时仅在发现新版本时弹窗；False 时无论有无更新都弹窗
+        auto_install: True 时发现新版本直接下载安装（手动触发）
     """
     try:
         req = urllib.request.Request(UPDATE_URL)
@@ -458,7 +496,6 @@ def check_for_updates(silent: bool = True) -> dict | None:
             _show_info("检查更新", f"当前已是最新版本 v{__version__}")
         return None
 
-    # 有新版本
     notes = data.get("notes", "无更新说明")
     dl_url = data.get("url", "")
     date = data.get("date", "")
@@ -466,17 +503,27 @@ def check_for_updates(silent: bool = True) -> dict | None:
         f"发现新版本 v{remote_ver}（当前 v{__version__}）\n"
         f"发布日期: {date}\n\n"
         f"更新内容:\n{notes}\n\n"
-        f"下载地址:\n{dl_url}\n\n"
-        f"是否现在打开下载页面？"
+        f"点击「是」自动下载安装，「否」仅打开下载页面。"
     )
-    _show_info("发现新版本", msg)
-    # 尝试打开下载页
-    if dl_url:
-        try:
-            import webbrowser
-            webbrowser.open(dl_url)
-        except Exception:
-            pass
+    if auto_install:
+        _show_info("发现新版本", msg)
+        if _auto_download_and_install(dl_url):
+            logger.info("[auto-update] 退出当前程序以让安装程序接替")
+            try:
+                import threading
+                threading.Thread(target=lambda: (time.sleep(1), os._exit(0)), daemon=True).start()
+            except Exception:
+                os._exit(0)
+            return data
+        return data
+    else:
+        _show_info("发现新版本", msg)
+        if dl_url:
+            try:
+                import webbrowser
+                webbrowser.open(dl_url)
+            except Exception:
+                pass
     return data
 
 

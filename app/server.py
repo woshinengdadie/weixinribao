@@ -1450,10 +1450,15 @@ def api_update_apply():
         # 启动安装程序（先启动，再退出当前程序）
         install_args = [tmp_path, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]
         logger.info(f"[update-apply] 启动安装: {' '.join(install_args)}")
-        _subprocess.Popen(install_args, close_fds=True)
+        # DETACHED_PROCESS 确保安装程序独立于父进程，父进程退出后安装程序继续运行
+        _subprocess.Popen(
+            install_args,
+            close_fds=True,
+            creationflags=_subprocess.DETACHED_PROCESS | _subprocess.CREATE_NEW_PROCESS_GROUP
+        )
         # 退出当前程序
         import threading
-        threading.Thread(target=lambda: (time.sleep(0.5), os._exit(0)), daemon=True).start()
+        threading.Thread(target=lambda: (time.sleep(1.0), os._exit(0)), daemon=True).start()
         return jsonify({"success": True, "message": "已开始安装，程序即将关闭"})
     except Exception as e:
         return jsonify({"success": False, "message": f"更新失败: {e}"})
